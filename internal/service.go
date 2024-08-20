@@ -1,0 +1,86 @@
+package internal
+
+import (
+	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/entity"
+)
+
+type TransactionServiceItf interface {
+	GetTransactionList(params dto.QueryParams) (dto.ResponseDto, error)
+	GetPaymentDetailMerchantProvider(req dto.GetPaymentDetailsRequest) (dto.ResponseDto, error)
+	GetPaymentDetailAccountInformation(req dto.GetPaymentDetailsRequest) (dto.ResponseDto, error)
+	GetPaymentDetailFee(paymentId string) (dto.ResponseDto, error)
+	GetPaymentDetailConfirmData(paymentId string) (dto.ResponseDto, error)
+	GetStatusChangeLog(paymentId string) (dto.ResponseDto, error)
+	GetPaymentDetailCapitalFlow(paymentId string) (dto.ResponseDto, error)
+	GetListFilterSvc() (dto.ResponseDto, error)
+	UpdateStatusTransaction(paymentId string, status string, username string, notes string, pin string) (dto.ResponseDto, error)
+	CreateMerchantExportSvc(payload dto.CreateMerchantExportReqDto) (dto.ResponseDto, error)
+	GetListMerchantExportSvc(params dto.GetListMerchantExportFilter) (dto.ResponseDto, error)
+	GetListFilterExportSvc() (dto.ResponseDto, error)
+	CreateInternalExportSvc(payload dto.CreateMerchantExportReqDto) (dto.ResponseDto, error)
+	GetListInternalExportSvc(params dto.GetListMerchantExportFilter) (dto.ResponseDto, error)
+	GetTransactionInListSvc(params dto.QueryParams) (dto.ResponseDto, error)
+	GetTransactionDetailSvc(paymentId string) (dto.ResponseDto, error)
+	GetTransactionOutListSvc(params dto.QueryParams) (dto.ResponseDto, error)
+	MerchantDisbursementSvc(payload dto.MerchantDisbursement) (dto.ResponseDto, error)
+	GetBankListDisbursementSvc(username string) (dto.ResponseDto, error)
+	CountDisbursementTotalAmountSvc(payload dto.CountDisbursementTotalAmountDto) (dto.ResponseDto, error)
+}
+
+type MerchantServiceItf interface {
+	GetListMerchantCallback(params dto.QueryParamsMerchantCallback) (dto.ResponseDto, error)
+	GetLatestMerchantCallback(paymentId string) (dto.ResponseDto, error)
+	GetCallbackAttemptsByPaymentId(paymentId string) (dto.ResponseDto, error)
+	GetListManualPaymentWithFilter(params dto.QueryParamsManualPayment) (dto.ResponseDto, error)
+	TopUpMerchantSvc(payload dto.AdjustBalanceReqPayload) (dto.ResponseDto, error)
+	HoldBalanceSvc(payload dto.AdjustBalanceReqPayload) (dto.ResponseDto, error)
+	SettlementBalanceSvc(payload dto.AdjustBalanceReqPayload) (dto.ResponseDto, error)
+	BalanceTransferSvc(payload dto.BalanceTrfReqPayload) (dto.ResponseDto, error)
+	SendCallbackSvc(paymentId string, username string) (dto.ResponseDto, error)
+	PayoutSettlementSvc(payload dto.AdjustBalanceReqPayload) (dto.ResponseDto, error)
+	GetDetailManualPaymentSvc(paymentId string) (dto.ResponseDto, error)
+	GetListMerchantWithFilterSvc(params dto.QueryParams) (dto.ResponseDto, error)
+	ReverseManualPaymentSvc(payload dto.UpdateStatusTransaction, username string) (dto.ResponseDto, error)
+	GetMerchantBalanceSvc(merchantId string) (dto.ResponseDto, error)
+	CreateMerchantSvc(payload dto.CreateMerchantDtoReq) (dto.ResponseDto, error)
+	GetMerchantAnalyticsSvc(payload dto.GetMerchantAnalyticsDtoReq) (dto.ResponseDto, error)
+	MerchantUpdateStatusSvc(payload dto.AccountData) (dto.ResponseDto, error)
+	GetMerchantPaychannelSvc(merchantId string) (dto.ResponseDto, error)
+	GetListCapitalFlowTransactionSvc(params dto.QueryParams) (dto.ResponseDto, error)
+	GetListTierPaychannelSvc(paychannelId int) (dto.ResponseDto, error)
+	GetListMerchantAccountSvc(params dto.QueryParams) (dto.ResponseDto, error)
+	GetMerchantPaychannelAnalyticsSvc(payload dto.GetMerchantAnalyticsDtoReq) (dto.ResponseDto, error)
+	GetRoutedPaychannelSvc(merchantPaychannelId int) (dto.ResponseDto, error)
+	GetPaymentOperatorsSvc(routedPaychannelId string) (dto.ResponseDto, error)
+	UpdateLimitOrFeeMerchantPaychannelSvc(payload dto.AdjustLimitOrFeePayload) (dto.ResponseDto, error)
+	GetAggregatedPaychannelSvc(paychannelId int) (dto.ResponseDto, error)
+	AddSegmentMerchantPaychannelSvc(payload dto.AddSegmentDtoReq) (dto.ResponseDto, error)
+	ActivateOrDeactivateMerchantPaychannelSvc(payload dto.AccountData) (dto.ResponseDto, error)
+	AddChannelSvc(id int, payload []dto.PaymentMethodData) (dto.ResponseDto, error)
+	GetListMerchantPaymentMethodsSvc(idMerchant int) (dto.ResponseDto, error)
+	AddRoutingPaychannelSvc(merchantPaychannelId int, payload dto.AddPaychannelRouting) (dto.ResponseDto, error)
+	GetActiveAvailablePaychannelSvc(merchantPaychannelId int) (dto.ResponseDto, error)
+	HomeAnalyticsSvc(payload dto.HomeAnalyticsDto) (dto.ResponseDto, error)
+	GetMerchantInformationSvc(merchantId string) (dto.ResponseDto, error)
+	DisplaySecretKeySvc(pin string, username string, merchantId string) (dto.ResponseDto, error)
+	GenerateSecretKeySvc(pin string, username string, merchantId string) (dto.ResponseDto, error)
+	GetListOtherTransactionsSvc(params dto.QueryParamsManualPayment) (dto.ResponseDto, error)
+	GetListCallbackMerchantSvc(params dto.QueryParamsMerchantCallback) (dto.ResponseDto, error)
+	GetMerchantAccountBalanceSvc(username string) (dto.ResponseDto, error)
+}
+
+type UserServiceItf interface {
+	Login(payload dto.LoginPayload) (dto.ResponseDto, error)
+	GetUserData(username string) (entity.User, error)
+	GetListRolesSvc() (dto.ResponseDto, error)
+	GetListUserMerchantSvc(merchantId string) (dto.ResponseDto, error)
+	InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error)
+}
+
+type ProviderServiceItf interface {
+	GetListProvidersSvc(paymentMethod string, search string) (dto.ResponseDto, error)
+	GetProviderAnalyticsSvc(payload dto.GetProviderAnalyticsDtoReq) (dto.ResponseDto, error)
+	GetListProviderPaychannelSvc(providerInterfaceId int) (dto.ResponseDto, error)
+	GetListProviderChannelAllSvc(params dto.QueryParams) (dto.ResponseDto, error)
+}
