@@ -1528,6 +1528,9 @@ func (ctrl *Controller) DisbursementCtrl(c echo.Context) error {
 	payload.Username = username
 	disbursementResp, err := ctrl.transactionService.MerchantDisbursementSvc(payload)
 	if err != nil {
+		if err.Error() == "wrong pin" || err.Error() == "insufficient" {
+			return c.JSON(http.StatusBadRequest, disbursementResp)
+		}
 		return c.JSON(http.StatusUnprocessableEntity, disbursementResp)
 	}
 

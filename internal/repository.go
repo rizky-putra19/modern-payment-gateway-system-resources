@@ -20,14 +20,17 @@ type TransactionsReadsRepositoryItf interface {
 	GetTransactionInListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
 	GetAccountInformationByPaymentIdAccountType(paymentId string, accountType string) (entity.AccountData, error)
 	GetTransactionOutListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
+	GetBankDataDetailRepo(bankName string) (entity.BankListDto, error)
 }
 
 type TransactionsWritesRepositoryItf interface {
 	UpdateStatus(status string, paymentId string) error
-	CreateTransactionStatusLog(paymentId string, statusLog string, changeBy string, notes string) (int, error)
+	CreateTransactionStatusLog(paymentId string, statusLog string, changeBy string, notes string, realNotes string) (int, error)
 	UpdateReportStoragesByFileName(publicUrl string, fileName string, status string) error
 	CreateListReportStoragesRepo(payload dto.CreateReportStorageDto) (int, error)
 	CreateMerchantExportCapitalFlowRepo(payload dto.CreateMerchantExportReqDto) ([]entity.MerchantExportCapitalFlowEntity, error)
+	CreateTransactionsRepo(payload dto.CreateTransactionsDto) (int, error)
+	CreateAccountInformationRepo(payload dto.CreateAccountInformationDto) (int, error)
 }
 
 type MerchantReadsRepositoryItf interface {
@@ -73,6 +76,7 @@ type MerchantWritesRepositoryItf interface {
 	DeleteRoutingPaychannelByMerchantPaychannelId(id int) error
 	AddRoutingPaychannelRepo(merchantPaychannelId int, providerPaychannelId int) (int, error)
 	UpdateMerchantSecretKeyRepo(secretKey string, merchantId string) error
+	UpdateMerchantBalanceSettleAndPendingOutBalanceRepo(settleBalance float64, pendingOutBalance float64, merchantId string) error
 }
 
 type UserReadsRepositoryItf interface {
@@ -94,4 +98,9 @@ type ProviderReadsRepositoryItf interface {
 	GetProviderInterfacesRepoById(id int) ([]entity.ProviderInterfacesEntity, error)
 	GetListProviderPaychannelById(id int) ([]entity.InterfacePaychannelEntity, error)
 	GetListProviderChannelAllRepo(params dto.QueryParams) ([]entity.ProviderPaychannelAllEntity, error)
+	GetAllCredentialsRepo(providerId string, interfaceSetting string) ([]entity.ProviderCredentialsEntity, error)
+}
+
+type ProviderWritesRepositoryItf interface {
+	CreateProviderConfirmationDetail(source string, paymentId string, status string) (int, error)
 }

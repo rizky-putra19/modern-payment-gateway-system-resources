@@ -130,3 +130,31 @@ type CountDisbursementRespDto struct {
 	FeeAmount   float64 `json:"feeAmount"`
 	TotalAmount float64 `json:"totalAmount"`
 }
+
+type CreateTransactionsDto struct {
+	PaymentId               string
+	MerchantReferenceNumber string
+	ProviderReferenceNumber string
+	MerchantPaychanneId     int
+	ProviderPaychannelId    int
+	TransactionAmount       float64
+	BankCode                string
+	Status                  string
+	RequestMethod           string
+}
+
+type ChannelIdCodeDisbursement struct {
+	MerchantPaychanneId  int
+	ProviderPaychannelId int
+	BankCode             string
+}
+
+type CreateAccountInformationDto struct {
+	PaymentId       string
+	AccountNumber   string
+	AccountName     string
+	BankName        string
+	BankCode        string
+	ReferenceNumber string
+	AccountType     string
+}

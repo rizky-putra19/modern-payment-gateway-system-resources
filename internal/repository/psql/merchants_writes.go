@@ -68,6 +68,22 @@ func (mw *MerchantWrites) UpdateMerchantCapitalAndSettleBalance(settleBalance fl
 	return nil
 }
 
+func (mw *MerchantWrites) UpdateMerchantBalanceSettleAndPendingOutBalanceRepo(settleBalance float64, pendingOutBalance float64, merchantId string) error {
+	query := `
+	UPDATE merchant_accounts
+	SET settle_balance = $1,
+		pending_transaction_out = $2,
+		updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'
+	WHERE merchant_id = $3;
+	`
+
+	_, err := mw.db.Exec(query, settleBalance, pendingOutBalance, merchantId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (mw *MerchantWrites) UpdateMerchantCapitalPendingOut(pendingAmount float64, balanceCapitalFlow float64, merchantId string) error {
 	query := `
 	UPDATE merchant_accounts

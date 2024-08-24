@@ -764,6 +764,28 @@ func (tr *TransactionsReads) GetListMerchantExportRepo(params dto.GetListMerchan
 	return listMerchantExport, nil
 }
 
+func (tr *TransactionsReads) GetBankDataDetailRepo(bankName string) (entity.BankListDto, error) {
+	var bankData entity.BankListDto
+
+	query := `
+	SELECT
+		bl.ID,
+		bl.bank_name,
+		bl.bank_code,
+		bl.created_at
+	FROM
+		bank_lists bl
+	WHERE bl.bank_name = $1;
+	`
+
+	err := tr.db.Get(&bankData, query, bankName)
+	if err != nil {
+		return bankData, err
+	}
+
+	return bankData, nil
+}
+
 func buildTransactionQuery(params dto.QueryParams) (string, error) {
 	pageInt := converter.ToInt(params.Page)
 	pageSizeInt := converter.ToInt(params.PageSize)

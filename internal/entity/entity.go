@@ -289,7 +289,9 @@ type ListMerchantAccountDto struct {
 
 type RoutedPaychanneDto struct {
 	Id                     int     `db:"id" json:"id"`
+	ProviderPaychannelId   int     `db:"provider_paychannel_id" json:"-"`
 	ProviderPaychannelName string  `db:"paychannel_name" json:"providerPaychannelName"`
+	ProviderId             string  `db:"provider_id" json:"-"`
 	ProviderName           string  `db:"provider_name" json:"providerName"`
 	PaymentMethodType      string  `db:"pay_type" json:"paymentType"`
 	PaymentMethodName      string  `db:"name" json:"paymentMethod"`
@@ -300,6 +302,7 @@ type RoutedPaychanneDto struct {
 	MaxTransaction         float64 `db:"max_transaction" json:"maxTransaction"`
 	MaxDailyTransaction    float64 `db:"max_daily_transaction" json:"maxDailyTransaction"`
 	Status                 string  `db:"status" json:"status"`
+	InterfaceSetting       string  `db:"interface_setting" json:"-"`
 }
 
 type BankListDto struct {

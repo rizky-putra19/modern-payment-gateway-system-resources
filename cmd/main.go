@@ -37,6 +37,7 @@ func main() {
 		repoWrites,
 		cfg.App,
 		adptr.MerchantCallback,
+		adptr.JackProvider,
 	)
 
 	// http server will be used only for callback operation

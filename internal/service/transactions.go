@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/hypay-id/backend-dashboard-hypay/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/hypay-id/backend-dashboard-hypay/internal/constant"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/entity"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/converter"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/helper"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/slog"
 )
@@ -22,8 +24,12 @@ type Transaction struct {
 	transactionRepoWrites internal.TransactionsWritesRepositoryItf
 	merchantRepoReads     internal.MerchantReadsRepositoryItf
 	merchantRepoWrites    internal.MerchantWritesRepositoryItf
+	providerRepoReads     internal.ProviderReadsRepositoryItf
+	providerRepoWrites    internal.ProviderWritesRepositoryItf
 	userRepoReads         internal.UserReadsRepositoryItf
 	configApp             config.App
+	jackProvider          internal.JackProviderItf
+	regex                 *regexp.Regexp
 }
 
 func NewTransaction(
@@ -33,7 +39,12 @@ func NewTransaction(
 	merchantRepoReads internal.MerchantReadsRepositoryItf,
 	merchantRepoWrites internal.MerchantWritesRepositoryItf,
 	configApp config.App,
+	jackProvider internal.JackProviderItf,
+	providerRepoReads internal.ProviderReadsRepositoryItf,
+	providerRepoWrites internal.ProviderWritesRepositoryItf,
 ) *Transaction {
+	// regex only allow string
+	reg, _ := regexp.Compile("[^a-zA-Z]+")
 	return &Transaction{
 		transactionRepoReads:  transactionRepoReads,
 		transactionRepoWrites: transactionRepoWrites,
@@ -41,6 +52,10 @@ func NewTransaction(
 		merchantRepoWrites:    merchantRepoWrites,
 		userRepoReads:         userRepoReads,
 		configApp:             configApp,
+		jackProvider:          jackProvider,
+		providerRepoReads:     providerRepoReads,
+		providerRepoWrites:    providerRepoWrites,
+		regex:                 reg,
 	}
 }
 
@@ -523,7 +538,7 @@ func (tr *Transaction) UpdateStatusTransaction(paymentId string, status string, 
 	// handle for status SUCCESS
 	if strings.ToUpper(status) == constant.StatusSuccess {
 		// update status change log
-		_, err := tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogSuccess, username, notes)
+		_, err := tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogSuccess, username, notes, "")
 		if err != nil {
 			resp = dto.ResponseDto{
 				ResponseCode:    http.StatusUnprocessableEntity,
@@ -844,7 +859,7 @@ func (tr *Transaction) UpdateStatusTransaction(paymentId string, status string, 
 	if strings.ToUpper(status) == constant.StatusFailed {
 
 		// update status change log
-		_, err := tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogFailed, username, notes)
+		_, err := tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogFailed, username, notes, "")
 		if err != nil {
 			resp = dto.ResponseDto{
 				ResponseCode:    http.StatusUnprocessableEntity,
@@ -1578,6 +1593,178 @@ func (tr *Transaction) GetTransactionDetailSvc(paymentId string) (dto.ResponseDt
 
 func (tr *Transaction) MerchantDisbursementSvc(payload dto.MerchantDisbursement) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
+	var disburseMerchantChannel entity.MerchantPaychannel
+
+	// business validation
+	user, err := tr.userRepoReads.GetUserByUsername(payload.Username)
+	if err != nil {
+		slog.Infof("username: %v, failed get user data, err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	// check input pin
+	if !comparePasswords(user.Pin, []byte(payload.Pin)) {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "wrong pin",
+		}
+		return resp, errors.New("wrong pin")
+	}
+
+	merchantData, err := tr.merchantRepoReads.GetMerchantDataByMerchantId(*user.MerchantID)
+	if err != nil {
+		slog.Infof("username: %v, failed get merchant data, err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	if merchantData.Status == constant.StatusInactive {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "merchant status is inactive",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	accountBalance, err := tr.merchantRepoReads.GetMerchantAccountByMerchantId(*user.MerchantID)
+	if err != nil {
+		slog.Infof("username: %v, failed get account balance, err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	if float64(payload.Amount) > accountBalance.SettledBalance {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "not enough balance for disbursement",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	listMerchantPaychannel, err := tr.merchantRepoReads.GetMerchantPaychannelByMerchantId(*user.MerchantID)
+	if err != nil {
+		slog.Infof("username: %v, failed get merchant channel, err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	if len(listMerchantPaychannel) == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "this merchant not routed for disbursement",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	for _, channel := range listMerchantPaychannel {
+		if channel.PaymentMethodChannel == constant.DisbursementPaymentMethod && channel.Segment == constant.MainType {
+			disburseMerchantChannel = channel
+		}
+	}
+
+	if disburseMerchantChannel.Id == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "this merchant not routed for disbursement",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	getRoutedChannel, err := tr.merchantRepoReads.GetListRoutedPaychannelByIdMerchantPaychannelRepo(disburseMerchantChannel.Id)
+	if err != nil {
+		slog.Infof("username: %v, getRoutedChannel got err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	if len(getRoutedChannel) == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "this merchant not routed for disbursement",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	if getRoutedChannel[0].Status == constant.StatusInactive {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "merchant status is inactive",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	if disburseMerchantChannel.MinTransaction > 0 || disburseMerchantChannel.MaxTransaction > 0 {
+		if float64(payload.Amount) < disburseMerchantChannel.MinTransaction || float64(payload.Amount) > disburseMerchantChannel.MaxTransaction {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusBadRequest,
+				ResponseMessage: "amount limit",
+			}
+			return resp, errors.New("insufficient")
+		}
+	}
+
+	if getRoutedChannel[0].MinTransaction > 0 || getRoutedChannel[0].MaxTransaction > 0 {
+		if float64(payload.Amount) < getRoutedChannel[0].MinTransaction || float64(payload.Amount) > getRoutedChannel[0].MaxTransaction {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusBadRequest,
+				ResponseMessage: "amount limit",
+			}
+			return resp, errors.New("insufficient")
+		}
+	}
+
+	providerId := getRoutedChannel[0].ProviderId
+	interfaceSetting := getRoutedChannel[0].InterfaceSetting
+	credentials, err := tr.providerRepoReads.GetAllCredentialsRepo(providerId, interfaceSetting)
+	if err != nil {
+		slog.Infof("username: %v, get credentials got err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	bankData, err := tr.transactionRepoReads.GetBankDataDetailRepo(payload.BankName)
+	if err != nil {
+		slog.Infof("username: %v, got err: %v", payload.Username, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	channelIdCodePayload := dto.ChannelIdCodeDisbursement{
+		MerchantPaychanneId:  disburseMerchantChannel.Id,
+		ProviderPaychannelId: getRoutedChannel[0].ProviderPaychannelId,
+		BankCode:             bankData.BankCode,
+	}
+
+	_, err = tr.disbursementSupport(credentials, payload, *user.MerchantID, disburseMerchantChannel.Fee, channelIdCodePayload)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
 
 	resp = dto.ResponseDto{
 		ResponseCode:    http.StatusOK,
@@ -1740,6 +1927,179 @@ func (tr *Transaction) CountDisbursementTotalAmountSvc(payload dto.CountDisburse
 	return resp, nil
 }
 
+func (tr *Transaction) JackDisbursementCallbackHandlingSvc(payload dto.CreateDisbursementRequestResponseData) (string, error) {
+	amountInt := converter.FromStringToIntAmount(payload.Destination.Amount)
+
+	slog.Infof("Jack %v callback payload: %v", payload.ReferenceID, payload)
+
+	if payload.State == constant.JackStateStatusDeclined || payload.State == constant.JackStateStatusCanceled {
+		// update status into failed
+		err := tr.transactionRepoWrites.UpdateStatus(constant.StatusFailed, payload.ReferenceID)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// update merchant balance
+		detailTransaction, err := tr.transactionRepoReads.GetPaymentDetailProviderMerchant(payload.ReferenceID)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		merchantBalance, err := tr.merchantRepoReads.GetMerchantAccountByMerchantId(detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		settleBalance := merchantBalance.SettledBalance
+		pendingPayout := merchantBalance.PendingTransactionOut
+
+		settleBalancePlusOut := settleBalance + float64(amountInt) + detailTransaction.MerchantFee
+		pendingPayoutMinusOut := pendingPayout - float64(amountInt) - detailTransaction.MerchantFee
+		err = tr.merchantRepoWrites.UpdateMerchantBalanceSettleAndPendingOutBalanceRepo(settleBalancePlusOut, pendingPayoutMinusOut, detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create merchant capital flow for transaction amount
+		payloadMerchantCapitalFlowPayout := dto.CreateMerchantCapitalFlowPayload{
+			PaymentId:         payload.ReferenceID,
+			MerchantAccountId: merchantBalance.Id,
+			TempBalance:       helper.FormatFloat64(merchantBalance.BalanceCapitalFlow),
+			ReasonId:          constant.ReasonIdPayout,
+			Status:            strings.ToUpper(constant.StatusFailed),
+			CreateBy:          constant.CreateBySystem,
+			Amount:            helper.FormatFloat64(float64(amountInt)),
+			CapitalType:       constant.CapitalTypeNotDebitNotCredit,
+		}
+		_, err = tr.merchantRepoWrites.CreateMerchantCapitalFlow(payloadMerchantCapitalFlowPayout)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create merchant capital flow for fee
+		payloadMerchantCapitalFlowFee := dto.CreateMerchantCapitalFlowPayload{
+			PaymentId:         payload.ReferenceID,
+			MerchantAccountId: merchantBalance.Id,
+			TempBalance:       helper.FormatFloat64(merchantBalance.BalanceCapitalFlow),
+			ReasonId:          constant.ReasonIdFee,
+			Status:            strings.ToUpper(constant.StatusFailed),
+			CreateBy:          constant.CreateBySystem,
+			Amount:            detailTransaction.MerchantFee,
+			CapitalType:       constant.CapitalTypeNotDebitNotCredit,
+		}
+		_, err = tr.merchantRepoWrites.CreateMerchantCapitalFlow(payloadMerchantCapitalFlowFee)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// update status transaction log
+		_, err = tr.transactionRepoWrites.CreateTransactionStatusLog(payload.ReferenceID, constant.StatusLogFailed, constant.CreateBySystem, constant.GeneralErrMsg, payload.ErrorMessage)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create provider confirmation detail
+		_, err = tr.providerRepoWrites.CreateProviderConfirmationDetail(constant.SourceCallback, payload.ReferenceID, constant.StatusFailed)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+	}
+
+	if payload.State == constant.JackStateStatusCompleted {
+		// update status into success
+		err := tr.transactionRepoWrites.UpdateStatus(constant.StatusSuccess, payload.ReferenceID)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// update merchant balance
+		detailTransaction, err := tr.transactionRepoReads.GetPaymentDetailProviderMerchant(payload.ReferenceID)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		merchantBalance, err := tr.merchantRepoReads.GetMerchantAccountByMerchantId(detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		pendingPayout := merchantBalance.PendingTransactionOut
+		BalanceCapital := merchantBalance.BalanceCapitalFlow
+
+		pendingPayoutMinusOut := pendingPayout - float64(amountInt)
+		balanceCapitalMinusOut := BalanceCapital - float64(amountInt)
+		err = tr.merchantRepoWrites.UpdateMerchantCapitalPendingOut(pendingPayoutMinusOut, balanceCapitalMinusOut, detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create merchant capital flow out
+		payloadMerchantCapitalFlowOut := dto.CreateMerchantCapitalFlowPayload{
+			PaymentId:         payload.ReferenceID,
+			MerchantAccountId: merchantBalance.Id,
+			TempBalance:       balanceCapitalMinusOut,
+			ReasonId:          constant.ReasonIdPayout,
+			Status:            strings.ToUpper(constant.StatusSuccess),
+			CreateBy:          constant.CreateBySystem,
+			Amount:            helper.FormatFloat64(float64(amountInt)),
+			CapitalType:       constant.CapitalTypeDebit,
+		}
+		_, err = tr.merchantRepoWrites.CreateMerchantCapitalFlow(payloadMerchantCapitalFlowOut)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		merchantBalanceUpdate, err := tr.merchantRepoReads.GetMerchantAccountByMerchantId(detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		pendingPayoutUpdated := merchantBalanceUpdate.PendingTransactionOut
+		balanceCapitalUpdate := merchantBalanceUpdate.BalanceCapitalFlow
+
+		pendingPayoutUpdatedMinusFee := pendingPayoutUpdated - detailTransaction.MerchantFee
+		balanceCapitalUpdateMinusFee := balanceCapitalUpdate - detailTransaction.MerchantFee
+		err = tr.merchantRepoWrites.UpdateMerchantCapitalPendingOut(pendingPayoutUpdatedMinusFee, balanceCapitalUpdateMinusFee, detailTransaction.MerchantId)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create merchant capital fee
+		payloadMerchantCapitalFlowFee := dto.CreateMerchantCapitalFlowPayload{
+			PaymentId:         payload.ReferenceID,
+			MerchantAccountId: merchantBalance.Id,
+			TempBalance:       balanceCapitalUpdateMinusFee,
+			ReasonId:          constant.ReasonIdFee,
+			Status:            strings.ToUpper(constant.StatusSuccess),
+			CreateBy:          constant.CreateBySystem,
+			Amount:            helper.FormatFloat64(float64(amountInt)),
+			CapitalType:       constant.CapitalTypeDebit,
+		}
+		_, err = tr.merchantRepoWrites.CreateMerchantCapitalFlow(payloadMerchantCapitalFlowFee)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+	}
+
+	return "ok", nil
+}
+
 func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantExportReqDto, fileName string) (string, error) {
 
 	// get data for create excel
@@ -1818,6 +2178,154 @@ func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantEx
 	}
 
 	os.Remove(fileName)
+
+	return "ok", nil
+}
+
+func (tr *Transaction) disbursementSupport(credentials []entity.ProviderCredentialsEntity, payload dto.MerchantDisbursement, merchantId string, merchantFee float64, channelCodeId dto.ChannelIdCodeDisbursement) (string, error) {
+	providerId := credentials[0].ProviderId
+
+	if providerId == constant.ProviderJack {
+		_, err := tr.jackSupportDisbursement(credentials, payload, merchantId, merchantFee, channelCodeId)
+		if err != nil {
+			slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+			return "", err
+		}
+	}
+
+	if !helper.StringInSlice(providerId, constant.ProviderListName) {
+		return "", errors.New("this merchant not routed for disbursement")
+	}
+
+	return "ok", nil
+}
+
+func (tr *Transaction) jackSupportDisbursement(credentials []entity.ProviderCredentialsEntity, payload dto.MerchantDisbursement, merchantId string, merchantFee float64, channelCodeId dto.ChannelIdCodeDisbursement) (string, error) {
+	randomStr := helper.GenerateRandomString(30)
+	randomStrMerchantReferenceNumber := helper.GenerateRandomString(30)
+	paymentId := "out_dsb-" + randomStr
+	merchantReferenceNumber := merchantId + "-" + randomStrMerchantReferenceNumber
+	currentBalance, err := tr.jackProvider.GetBalance(payload.Username, credentials)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	if payload.Amount > currentBalance {
+		slog.Infof("username: %v, disbursement limit", payload.Username)
+		return "", errors.New("amount limit")
+	}
+
+	inquiryData, err := tr.jackProvider.InquiryAccount(payload, credentials, channelCodeId.BankCode)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	accountHolder := inquiryData.Data.AccountName
+	responseName := tr.regex.ReplaceAllString(accountHolder, "")
+	requestName := tr.regex.ReplaceAllString(payload.BankAccountName, "")
+	similarWord := helper.CompareTwoStrings(strings.ToLower(responseName), strings.ToLower(requestName))
+	if similarWord < constant.BankAccountNameSimilarityMatchInPercent {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, "name validation not match")
+		return "", errors.New("name validation not match")
+	}
+
+	createDisbursement, err := tr.jackProvider.CreateDisbursement(payload, credentials, channelCodeId.BankCode, paymentId)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	providerCreateId := converter.ToString(createDisbursement.Data.ID)
+	confirmTransactionData := dto.ConfirmTransactionPayload{
+		Username:   payload.Username,
+		ProviderID: providerCreateId,
+	}
+
+	confirm, err := tr.jackProvider.ConfirmDisbursement(confirmTransactionData, credentials)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	// update merchant account
+	merchantAccount, err := tr.merchantRepoReads.GetMerchantAccountByMerchantId(merchantId)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	// balance adjustment with fee
+	settleBalance := merchantAccount.SettledBalance
+	pendingOutBalance := merchantAccount.PendingTransactionOut
+	settleBalanceMinusOutAndFee := settleBalance - float64(payload.Amount) - merchantFee
+	pendingOutBalancePlusOutAndFee := pendingOutBalance + float64(payload.Amount) + merchantFee
+
+	// updated merchant settle balance
+	err = tr.merchantRepoWrites.UpdateMerchantBalanceSettleAndPendingOutBalanceRepo(settleBalanceMinusOutAndFee, pendingOutBalancePlusOutAndFee, merchantId)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	// create transaction
+	createTransactionPayload := dto.CreateTransactionsDto{
+		PaymentId:               paymentId,
+		MerchantReferenceNumber: merchantReferenceNumber,
+		ProviderReferenceNumber: converter.ToString(confirm.Data.ID),
+		MerchantPaychanneId:     channelCodeId.MerchantPaychanneId,
+		ProviderPaychannelId:    channelCodeId.ProviderPaychannelId,
+		TransactionAmount:       float64(payload.Amount),
+		BankCode:                channelCodeId.BankCode,
+		Status:                  constant.StatusProcessing,
+		RequestMethod:           "MERCHANT_DASHBOARD",
+	}
+
+	_, err = tr.transactionRepoWrites.CreateTransactionsRepo(createTransactionPayload)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	// create transaction logs
+	_, err = tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogAcceptedByPlatform, constant.CreateBySystem, "", "")
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	_, err = tr.transactionRepoWrites.CreateTransactionStatusLog(paymentId, constant.StatusLogAcceptedByProvider, constant.CreateBySystem, "", "")
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	// create account information
+	payloadAccountInformationCreditor := dto.CreateAccountInformationDto{
+		PaymentId:       paymentId,
+		AccountNumber:   payload.BankAccountNumber,
+		AccountName:     payload.BankAccountName,
+		BankName:        payload.BankName,
+		BankCode:        channelCodeId.BankCode,
+		ReferenceNumber: converter.ToString(confirm.Data.ID),
+		AccountType:     constant.AccountTypeCreditor,
+	}
+	_, err = tr.transactionRepoWrites.CreateAccountInformationRepo(payloadAccountInformationCreditor)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
+
+	payloadAccountInformationDebitor := dto.CreateAccountInformationDto{
+		PaymentId:   paymentId,
+		AccountType: constant.AccountTypeDebitor,
+	}
+	_, err = tr.transactionRepoWrites.CreateAccountInformationRepo(payloadAccountInformationDebitor)
+	if err != nil {
+		slog.Infof("username: %v, disbursementSupport got err %v", payload.Username, err.Error())
+		return "", err
+	}
 
 	return "ok", nil
 }

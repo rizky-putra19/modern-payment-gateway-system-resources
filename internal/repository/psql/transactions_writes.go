@@ -34,7 +34,7 @@ func (tr *TransactionsWrites) UpdateStatus(status string, paymentId string) erro
 	return nil
 }
 
-func (tr *TransactionsWrites) CreateTransactionStatusLog(paymentId string, statusLog string, changeBy string, notes string) (int, error) {
+func (tr *TransactionsWrites) CreateTransactionStatusLog(paymentId string, statusLog string, changeBy string, notes string, realNotes string) (int, error) {
 	var transactionStatusLogsId int
 	query := `
 	INSERT INTO transaction_status_logs (payment_id, status_log, change_by, notes, real_notes, created_at, updated_at)
@@ -57,6 +57,14 @@ func (tr *TransactionsWrites) CreateTransactionStatusLog(paymentId string, statu
 	}
 
 	if notes != "" {
+		if realNotes != "" {
+			row := tr.db.QueryRow(query, paymentId, statusLog, changeBy, notes, realNotes)
+			err := row.Scan(&transactionStatusLogsId)
+			if err != nil || transactionStatusLogsId == 0 {
+				return transactionStatusLogsId, err
+			}
+			return transactionStatusLogsId, nil
+		}
 		row := tr.db.QueryRow(query, paymentId, statusLog, changeBy, notes, notes)
 		err := row.Scan(&transactionStatusLogsId)
 		if err != nil || transactionStatusLogsId == 0 {
@@ -304,4 +312,56 @@ func (tr *TransactionsWrites) CreateListReportStoragesRepo(payload dto.CreateRep
 	}
 
 	return idReport, nil
+}
+
+func (tr *TransactionsWrites) CreateTransactionsRepo(payload dto.CreateTransactionsDto) (int, error) {
+	var transactionId int
+
+	query := `
+	INSERT INTO transactions (payment_id, merchant_reference_number, provider_reference_number, merchant_paychannel_id, provider_paychannel_id, transaction_amount, bank_code, status, request_method, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+	RETURNING id
+	`
+
+	row := tr.db.QueryRow(query, payload.PaymentId, payload.MerchantReferenceNumber, payload.ProviderReferenceNumber, payload.MerchantPaychanneId, payload.ProviderPaychannelId, payload.TransactionAmount, payload.BankCode, payload.Status, payload.RequestMethod)
+	err := row.Scan(&transactionId)
+	if err != nil || transactionId == 0 {
+		return transactionId, err
+	}
+
+	return transactionId, nil
+}
+
+func (tr *TransactionsWrites) CreateAccountInformationRepo(payload dto.CreateAccountInformationDto) (int, error) {
+	var accountInformationId int
+
+	query := `
+	INSERT INTO account_informations (payment_id, account_number, account_name, bank_name, bank_code, reference_number, account_type, created_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+	RETURNING id
+	`
+
+	if payload.AccountNumber == "" && payload.AccountName == "" && payload.BankCode == "" && payload.BankName == "" && payload.ReferenceNumber == "" {
+		query = `
+		INSERT INTO account_informations (payment_id, account_type, created_at)
+		VALUES ($1, $2, $3, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+		RETURNING id
+		`
+
+		row := tr.db.QueryRow(query, payload.PaymentId, payload.AccountType)
+		err := row.Scan(&accountInformationId)
+		if err != nil || accountInformationId == 0 {
+			return accountInformationId, err
+		}
+
+		return accountInformationId, nil
+	}
+
+	row := tr.db.QueryRow(query, payload.PaymentId, payload.AccountNumber, payload.AccountName, payload.BankName, payload.BankCode, payload.ReferenceNumber, payload.AccountType)
+	err := row.Scan(&accountInformationId)
+	if err != nil || accountInformationId == 0 {
+		return accountInformationId, err
+	}
+
+	return accountInformationId, nil
 }

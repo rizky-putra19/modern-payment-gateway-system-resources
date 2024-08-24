@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -299,4 +300,20 @@ func HashString(pwd []byte) (string, error) {
 	}
 
 	return string(hash), nil
+}
+
+func CheckingFirstAndLastStr(str string) (first string, last string, err error) {
+	words := strings.Fields(str)
+
+	if len(words) > 0 {
+		firstWord := words[0]
+		if len(words) > 1 {
+			restOfWords := strings.Join(words[1:], " ")
+			return firstWord, restOfWords, nil
+		} else {
+			return firstWord, firstWord, nil
+		}
+	}
+
+	return "", "", errors.New("there is no string")
 }

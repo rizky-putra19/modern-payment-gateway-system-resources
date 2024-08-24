@@ -4,6 +4,8 @@ const CreateBySystem = "SYSTEM"
 const BucketName = "hypaystagingreportstorage"
 const BusinessHypayEmail = "business@hypay.id"
 const MainType = "MAIN"
+const GeneralErrMsg = "failed to do disbursement, please ask admin for more info"
+const BankAccountNameSimilarityMatchInPercent = 0.3
 
 const (
 	ReasonNameSettlement     = "Settlement"
@@ -133,3 +135,11 @@ const (
 
 const GetSecret = "service-account-credentials"
 const InternalExport = "[INTERNAL-EXPORT]"
+
+const (
+	ProviderJack = "ID-JACK"
+)
+
+var ProviderListName = []string{
+	"ID-JACK",
+}

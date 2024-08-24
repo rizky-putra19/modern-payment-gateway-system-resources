@@ -18,6 +18,7 @@ func New(
 	repoWrites *repository.Repository,
 	cfg config.App,
 	adptrMerchantCallback internal.MerchantCallbackItf,
+	jackProvider internal.JackProviderItf,
 ) *Service {
 	transactions := NewTransaction(
 		repoReads.TransactionsReads,
@@ -26,6 +27,9 @@ func New(
 		repoReads.MerchantReads,
 		repoWrites.MerchantWrites,
 		cfg,
+		jackProvider,
+		repoReads.ProviderReads,
+		repoWrites.ProviderWrites,
 	)
 	merchants := NewMerchant(repoReads.MerchantReads,
 		repoWrites.MerchantWrites,

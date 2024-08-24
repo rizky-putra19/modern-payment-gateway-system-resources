@@ -19,6 +19,7 @@ type Repository struct {
 	MerchantReads      internal.MerchantReadsRepositoryItf
 	MerchantWrites     internal.MerchantWritesRepositoryItf
 	ProviderReads      internal.ProviderReadsRepositoryItf
+	ProviderWrites     internal.ProviderWritesRepositoryItf
 	UserReads          internal.UserReadsRepositoryItf
 	UserWrites         internal.UserWritesRepositoryItf
 }
@@ -48,12 +49,14 @@ func NewWritesRepo(cfg config.Storage) *Repository {
 	transactionWrites := psql.NewTransactionsWrites(dbDriverWrites)
 	merchantWrites := psql.NewMerchantWrites(dbDriverWrites)
 	userWrites := psql.NewUsersWrites(dbDriverWrites)
+	providerWrites := psql.NewProviderWrites(dbDriverWrites)
 
 	return &Repository{
 		db:                 dbDriverWrites,
 		TransactionsWrites: transactionWrites,
 		MerchantWrites:     merchantWrites,
 		UserWrites:         userWrites,
+		ProviderWrites:     providerWrites,
 	}
 }
 

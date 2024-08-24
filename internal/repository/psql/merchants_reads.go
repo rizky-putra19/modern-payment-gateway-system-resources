@@ -521,7 +521,7 @@ func (mr *MerchantReads) GetMerchantPaychannelByMerchantId(merchantId string) ([
 	`
 
 	err := mr.db.Select(&merchantPaychannelList, query, merchantId)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return merchantPaychannelList, err
 	}
 
@@ -628,7 +628,9 @@ func (mr *MerchantReads) GetListRoutedPaychannelByIdMerchantPaychannelRepo(id in
 	query := `
 	SELECT
 		pr.ID,
+		pp.ID AS provider_paychannel_id,
 		pp.paychannel_name,
+		p.provider_id,
 		p.provider_name,
 		pm.pay_type,
 		pm.name,
@@ -637,7 +639,8 @@ func (mr *MerchantReads) GetListRoutedPaychannelByIdMerchantPaychannelRepo(id in
 		pp.min_transaction,
 		pp.max_transaction,
 		pp.max_daily_transaction,
-		pp.status
+		pp.status,
+		pp.interface_setting
 	FROM
 		paychannel_routings pr
 		JOIN provider_paychannels pp ON pr.provider_paychannel_id = pp.ID

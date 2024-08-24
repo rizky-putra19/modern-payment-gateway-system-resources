@@ -54,3 +54,13 @@ type ProviderPaychannelAllEntity struct {
 	MaxDailyLimit float64 `db:"max_daily_transaction" json:"maxDailyLimit"`
 	Status        string  `db:"status" json:"status"`
 }
+
+type ProviderCredentialsEntity struct {
+	Id               int       `db:"id"`
+	ProviderId       string    `db:"provider_id"`
+	Key              string    `db:"key"`
+	Value            string    `db:"value"`
+	InterfaceSetting string    `db:"interface_setting"`
+	CreatedAt        time.Time `db:"created_at"`
+	UpdatedAt        time.Time `db:"updated_at"`
+}

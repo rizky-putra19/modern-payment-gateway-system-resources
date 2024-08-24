@@ -1,6 +1,7 @@
 package psql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -298,4 +299,23 @@ func (pr *ProviderReads) GetListProviderChannelAllRepo(params dto.QueryParams) (
 	}
 
 	return listProviderChannel, nil
+}
+
+func (pr *ProviderReads) GetAllCredentialsRepo(providerId string, interfaceSetting string) ([]entity.ProviderCredentialsEntity, error) {
+	var listCredentials []entity.ProviderCredentialsEntity
+
+	query := `
+		SELECT *
+		FROM provider_credentials pc
+		WHERE pc.provider_id = $1
+		AND pc.interface_setting = $2
+		ORDER BY pc.created_at DESC;
+	`
+
+	err := pr.db.Select(&listCredentials, query, providerId, interfaceSetting)
+	if err != nil && err != sql.ErrNoRows {
+		return listCredentials, err
+	}
+
+	return listCredentials, nil
 }

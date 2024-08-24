@@ -6,6 +6,7 @@ import (
 	"github.com/hypay-id/backend-dashboard-hypay/internal/constant"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/converter"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/slog"
 	"github.com/labstack/echo/v4"
 )
 
@@ -116,4 +117,42 @@ func (ctrl *Controller) GetListProviderChannelAllCtrl(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, listPaychannelResp)
+}
+
+func (ctrl *Controller) JackDisbursementCallbackCtrl(c echo.Context) error {
+	var req dto.CreateDisbursementRequestResponseData
+
+	// convert response to struct
+	err := c.Bind(&req)
+	if err != nil {
+		slog.Infof("JACK http-request /payOutCallback [end] [error] invalid request body (%v)", err.Error())
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status":  http.StatusUnprocessableEntity,
+			"message": "invalid request body",
+		})
+	}
+
+	amountInt := converter.FromStringToIntAmount(req.Destination.Amount)
+	if amountInt < 10000 || amountInt > 500000000 {
+		slog.Infof("JACK %v http-request /payOutCallback [end] [error] invalid amount (%v)", req.ReferenceID, req.Destination.Amount)
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status":  http.StatusBadRequest,
+			"message": "invalid amount",
+		})
+	}
+
+	_, err = ctrl.transactionService.JackDisbursementCallbackHandlingSvc(req)
+	if err != nil {
+		slog.Infof("JACK %v http-request /payOutCallback [end] [error] internal server error (%v)", req.ReferenceID, err.Error())
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status":  http.StatusUnprocessableEntity,
+			"message": "interval server error",
+		})
+	}
+
+	slog.Infof("JACK http-request /payOutCallback [end] [success]")
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "ok",
+	})
 }

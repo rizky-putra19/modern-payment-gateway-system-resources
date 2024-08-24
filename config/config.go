@@ -45,6 +45,7 @@ type App struct {
 	ClientCertURL       string
 	Domain              string
 	AppPassMail         string
+	CallbackUrl         string
 }
 
 type PSQL struct {
@@ -111,6 +112,7 @@ func BindConfig(env EnvConfig) Schema {
 			ClientCertURL:       env.ClientCertURL,
 			Domain:              env.Domain,
 			AppPassMail:         env.AppPassMail,
+			CallbackUrl:         env.AppCallbackUrl,
 		},
 	}
 }
@@ -139,4 +141,5 @@ type EnvConfig struct {
 	ClientCertURL                 string `mapstructure:"CONFIG_CLIENT"`
 	Domain                        string `mapstructure:"CONFIG_DOMAIN"`
 	AppPassMail                   string `mapstructure:"CONFIG_APP_MAIL"`
+	AppCallbackUrl                string `mapstructure:"CONFIG_URL_DISBURSEMENT_CALLBACK"`
 }
