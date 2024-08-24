@@ -673,6 +673,76 @@ func (tr *TransactionsReads) GetTransactionListByMerchantPaychannelRepo(payload 
 	return transactionData, nil
 }
 
+func (tr *TransactionsReads) GetListMerchantReportRepo(params dto.GetListMerchantExportFilter, merchantId string) ([]entity.ReportStoragesEntity, error) {
+	var listMerchantExport []entity.ReportStoragesEntity
+
+	query := `
+	SELECT
+		rs.ID,
+		rs.created_at,
+		rs.merchant_id,
+		m.merchant_name,
+		m.currency,
+		rs.export_type,
+		rs.period,
+		rs.status,
+		rs.report_url,
+		rs.created_by_user
+	FROM
+		report_storages rs
+		JOIN merchants m ON m.merchant_id = rs.merchant_id
+	`
+
+	var conditions []string
+
+	conditions = append(conditions, fmt.Sprintf("rs.merchant_id = '%v'", merchantId))
+	conditions = append(conditions, fmt.Sprintf("rs.created_by_user = '%v'", "USER_MERCHANT"))
+
+	if params.MinDate != "" {
+		conditions = append(conditions, fmt.Sprintf("rs.created_at >= '%v'", params.MinDate))
+	}
+
+	if params.MaxDate != "" {
+		conditions = append(conditions, fmt.Sprintf("rs.created_at <= '%v'", params.MaxDate))
+	}
+
+	if params.Search != "" {
+		searchStr := fmt.Sprintf("%%%v%%", params.Search)
+		conditions = append(conditions, fmt.Sprintf("(rs.merchant_id LIKE '%v')", searchStr))
+	}
+
+	if params.ExportStatus != "" {
+		sliceStatus := helper.SplitString(params.ExportStatus)
+		var statusConditions []string
+		for _, status := range sliceStatus {
+			statusConditions = append(statusConditions, fmt.Sprintf("rs.status = '%v'", status))
+		}
+		conditions = append(conditions, "("+strings.Join(statusConditions, " OR ")+")")
+	}
+
+	if params.ExportType != "" {
+		sliceExportType := helper.SplitString(params.ExportType)
+		var exportTypeConditions []string
+		for _, exportType := range sliceExportType {
+			exportTypeConditions = append(exportTypeConditions, fmt.Sprintf("rs.export_type = '%v'", exportType))
+		}
+		conditions = append(conditions, "("+strings.Join(exportTypeConditions, " OR ")+")")
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query += " ORDER BY rs.created_at DESC"
+
+	err := tr.db.Select(&listMerchantExport, query)
+	if err != nil {
+		return listMerchantExport, err
+	}
+
+	return listMerchantExport, nil
+}
+
 func (tr *TransactionsReads) GetListMerchantExportRepo(params dto.GetListMerchantExportFilter) ([]entity.ReportStoragesEntity, error) {
 	var listMerchantExport []entity.ReportStoragesEntity
 

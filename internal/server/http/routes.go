@@ -88,6 +88,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.GET("/get-list-callback-merchants", ctrl.AuthMiddleware(ctrl.GetListMerchantCallbackCtrl))
 	mrn.GET("/get-merchant-account-balance", ctrl.AuthMiddleware(ctrl.GetMerchantAccountBalanceCtrl))
 	mrn.GET("/get-bank-list-disbursement", ctrl.AuthMiddleware(ctrl.GetBankListForDisbursementCtrl))
+	mrn.GET("/get-report-list", ctrl.AuthMiddleware(ctrl.GetReportListCtrl))
 
 	// post method
 	mrn.POST("/resend-callback", ctrl.AuthMiddleware(ctrl.ResendCallbackMerchantCtrl))

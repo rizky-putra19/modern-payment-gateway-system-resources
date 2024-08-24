@@ -2100,6 +2100,36 @@ func (tr *Transaction) JackDisbursementCallbackHandlingSvc(payload dto.CreateDis
 	return "ok", nil
 }
 
+func (tr *Transaction) GetReportListMerchantSvc(req dto.GetListMerchantExportFilter, username string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	user, err := tr.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	listMerchantExport, err := tr.transactionRepoReads.GetListMerchantReportRepo(req, *user.MerchantID)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            listMerchantExport,
+	}
+
+	return resp, nil
+}
+
 func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantExportReqDto, fileName string) (string, error) {
 
 	// get data for create excel

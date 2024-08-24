@@ -1556,3 +1556,37 @@ func (ctrl *Controller) GetBankListForDisbursementCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, bankListDisbursementResp)
 }
+
+func (ctrl *Controller) GetReportListCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	exportStatus := c.QueryParam("exportStatus")
+	exportType := c.QueryParam("exportType")
+	minDate := c.QueryParam("minDate")
+	maxDate := c.QueryParam("maxDate")
+	search := c.QueryParam("search")
+
+	params := dto.GetListMerchantExportFilter{
+		ExportStatus: exportStatus,
+		Search:       search,
+		MinDate:      minDate,
+		MaxDate:      maxDate,
+		ExportType:   exportType,
+	}
+
+	reportList, err := ctrl.transactionService.GetReportListMerchantSvc(params, username)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, reportList)
+	}
+
+	return c.JSON(http.StatusOK, reportList)
+}

@@ -17,6 +17,7 @@ type TransactionsReadsRepositoryItf interface {
 	GetTransactionListByMerchantPaychannelRepo(payload dto.GetMerchantAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
 	GetTransactionDataForProviderAnalyticsRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
 	GetListMerchantExportRepo(params dto.GetListMerchantExportFilter) ([]entity.ReportStoragesEntity, error)
+	GetListMerchantReportRepo(params dto.GetListMerchantExportFilter, merchantId string) ([]entity.ReportStoragesEntity, error)
 	GetTransactionInListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
 	GetAccountInformationByPaymentIdAccountType(paymentId string, accountType string) (entity.AccountData, error)
 	GetTransactionOutListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
