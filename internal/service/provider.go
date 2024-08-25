@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"math"
 	"net/http"
 	"time"
@@ -177,6 +178,14 @@ func (pr *Provider) GetProviderChannelAnalyticsSvc(payload dto.GetProviderAnalyt
 			ResponseMessage: err.Error(),
 		}
 		return resp, err
+	}
+
+	if providerChannelData.Id == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "data not found",
+		}
+		return resp, errors.New("data not found")
 	}
 
 	analyticsResp := dto.ProviderChannelAnalyticsResDto{

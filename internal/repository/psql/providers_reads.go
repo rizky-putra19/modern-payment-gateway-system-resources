@@ -336,6 +336,7 @@ func (pr *ProviderReads) GetDetailProviderChannelById(id int) (entity.ProviderCh
 		pp.min_transaction,
 		pp.max_transaction,
 		pp.max_daily_transaction,
+		pp.interface_setting,
 		pp.status
 	FROM
 		provider_paychannels pp
@@ -347,7 +348,7 @@ func (pr *ProviderReads) GetDetailProviderChannelById(id int) (entity.ProviderCh
 	`
 
 	err := pr.db.Get(&detailData, query, id)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return detailData, err
 	}
 
