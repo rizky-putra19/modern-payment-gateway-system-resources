@@ -337,6 +337,25 @@ func (ctrl *Controller) GetListFilterExportCtrl(c echo.Context) error {
 	return c.JSON(http.StatusOK, listFilter)
 }
 
+func (ctrl *Controller) GetListFilterMerchantReportCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	listFilter, err := ctrl.transactionService.GetListFilterExportSvc()
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, listFilter)
+	}
+
+	return c.JSON(http.StatusOK, listFilter)
+}
+
 func (ctrl *Controller) CreateInternalExportCtrl(c echo.Context) error {
 	userType := c.Get("userType").(string)
 	roleName := c.Get("roleName").(string)
