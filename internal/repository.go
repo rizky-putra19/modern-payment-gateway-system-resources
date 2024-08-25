@@ -102,6 +102,8 @@ type ProviderReadsRepositoryItf interface {
 	GetListProviderChannelAllRepo(params dto.QueryParams) ([]entity.ProviderPaychannelAllEntity, error)
 	GetAllCredentialsRepo(providerId string, interfaceSetting string) ([]entity.ProviderCredentialsEntity, error)
 	GetDetailProviderChannelById(id int) (entity.ProviderChannelDetailEntity, error)
+	GetBankListProviderMethodRepo(providerChannelId int) ([]entity.BankListDto, error)
+	GetBankListProviderChannelRepo(providerChannelId int) ([]entity.BankListDto, error)
 }
 
 type ProviderWritesRepositoryItf interface {

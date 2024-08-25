@@ -245,3 +245,24 @@ func (ctrl *Controller) UpdateLimitFeeInterfacePchannelCtrl(c echo.Context) erro
 
 	return c.JSON(http.StatusOK, adjustResp)
 }
+
+func (ctrl *Controller) GetProviderChannelOperatorsCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	providerChannelId := c.QueryParam("providerChannelId")
+	intProviderChannelId := converter.ToInt(providerChannelId)
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	paymentOperatorList, err := ctrl.providerService.GetProviderChannelOperatorSvc(intProviderChannelId)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, paymentOperatorList)
+	}
+
+	return c.JSON(http.StatusOK, paymentOperatorList)
+}

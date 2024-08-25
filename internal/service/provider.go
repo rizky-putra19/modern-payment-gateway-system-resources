@@ -271,6 +271,44 @@ func (pr *Provider) UpdateFeeLimitInterfaceProviderChannelSvc(payload dto.Adjust
 	return resp, nil
 }
 
+func (pr *Provider) GetProviderChannelOperatorSvc(providerChannelId int) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	bankList, err := pr.providerRepoReads.GetBankListProviderMethodRepo(providerChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	bankNameListPaychannel, err := pr.providerRepoReads.GetBankListProviderChannelRepo(providerChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	for j := range bankList {
+		for i := range bankNameListPaychannel {
+			if bankNameListPaychannel[i].BankName == bankList[j].BankName {
+				bankList[j].CheckListFlagging = true
+			}
+		}
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            bankList,
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

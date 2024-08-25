@@ -354,3 +354,54 @@ func (pr *ProviderReads) GetDetailProviderChannelById(id int) (entity.ProviderCh
 
 	return detailData, nil
 }
+
+func (pr *ProviderReads) GetBankListProviderMethodRepo(providerChannelId int) ([]entity.BankListDto, error) {
+	var bankList []entity.BankListDto
+
+	query := `
+		SELECT
+			bl.ID,
+			bl.bank_name,
+			bl.bank_code,
+			bl.created_at
+		FROM
+			provider_paychannels pp
+			JOIN provider_payment_methods ppm ON pp.provider_payment_method_id = ppm.ID
+			JOIN provider_payment_method_bank_lists ppmbl ON ppm.ID = ppmbl.provider_payment_method_id
+			JOIN bank_lists bl ON ppmbl.bank_list_id = bl.ID
+		WHERE
+			pp.ID = $1;
+	`
+
+	err := pr.db.Select(&bankList, query, providerChannelId)
+	if err != nil {
+		return bankList, err
+	}
+
+	return bankList, nil
+}
+
+func (pr *ProviderReads) GetBankListProviderChannelRepo(providerChannelId int) ([]entity.BankListDto, error) {
+	var bankList []entity.BankListDto
+
+	query := `
+		SELECT
+			bl.ID,
+			bl.bank_name,
+			bl.bank_code,
+			bl.created_at
+		FROM
+			provider_paychannels pp
+			JOIN provider_paychannel_bank_lists ppbl ON pp.ID = ppbl.provider_paychannel_id
+			JOIN bank_lists bl ON ppbl.bank_list_id = bl.ID
+		WHERE
+			pp.ID = $1;
+	`
+
+	err := pr.db.Select(&bankList, query, providerChannelId)
+	if err != nil {
+		return bankList, err
+	}
+
+	return bankList, nil
+}
