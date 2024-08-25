@@ -319,3 +319,37 @@ func (pr *ProviderReads) GetAllCredentialsRepo(providerId string, interfaceSetti
 
 	return listCredentials, nil
 }
+
+func (pr *ProviderReads) GetDetailProviderChannelById(id int) (entity.ProviderChannelDetailEntity, error) {
+	var detailData entity.ProviderChannelDetailEntity
+
+	query := `
+	SELECT
+		pp.ID,
+		pp.paychannel_name,
+		p.currency,
+		p.provider_name,
+		pm.pay_type,
+		pm.name,
+		pp.fee,
+		pp.fee_type,
+		pp.min_transaction,
+		pp.max_transaction,
+		pp.max_daily_transaction,
+		pp.status
+	FROM
+		provider_paychannels pp
+		JOIN provider_payment_methods ppm ON ppm.ID = pp.provider_payment_method_id
+		JOIN providers p ON p.ID = ppm.provider_id
+		JOIN payment_methods pm ON pm.ID = ppm.payment_method_id
+	WHERE
+		pp.ID = $1;
+	`
+
+	err := pr.db.Get(&detailData, query, id)
+	if err != nil {
+		return detailData, err
+	}
+
+	return detailData, nil
+}

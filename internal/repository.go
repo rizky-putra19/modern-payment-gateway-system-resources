@@ -22,6 +22,7 @@ type TransactionsReadsRepositoryItf interface {
 	GetAccountInformationByPaymentIdAccountType(paymentId string, accountType string) (entity.AccountData, error)
 	GetTransactionOutListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
 	GetBankDataDetailRepo(bankName string) (entity.BankListDto, error)
+	GetTransactionDataByProviderChannelRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
 }
 
 type TransactionsWritesRepositoryItf interface {
@@ -100,6 +101,7 @@ type ProviderReadsRepositoryItf interface {
 	GetListProviderPaychannelById(id int) ([]entity.InterfacePaychannelEntity, error)
 	GetListProviderChannelAllRepo(params dto.QueryParams) ([]entity.ProviderPaychannelAllEntity, error)
 	GetAllCredentialsRepo(providerId string, interfaceSetting string) ([]entity.ProviderCredentialsEntity, error)
+	GetDetailProviderChannelById(id int) (entity.ProviderChannelDetailEntity, error)
 }
 
 type ProviderWritesRepositoryItf interface {

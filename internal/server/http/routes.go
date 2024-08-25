@@ -57,6 +57,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	ops.GET("/get-roles", ctrl.AuthMiddleware(ctrl.GetRolesCtrl))
 	ops.GET("/get-users-merchant", ctrl.AuthMiddleware(ctrl.GetListUserMerchants))
 	ops.GET("/get-list-provider-channel-all", ctrl.AuthMiddleware(ctrl.GetListProviderChannelAllCtrl))
+	ops.GET("/provider-channel-analytics", ctrl.AuthMiddleware(ctrl.GetProviderChannelAnalyticsCtrl))
 
 	// POST Method
 	ops.POST("/top-up", ctrl.AuthMiddleware(ctrl.TopUpMerchantCtrl))

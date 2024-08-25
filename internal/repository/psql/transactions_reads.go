@@ -856,6 +856,90 @@ func (tr *TransactionsReads) GetBankDataDetailRepo(bankName string) (entity.Bank
 	return bankData, nil
 }
 
+func (tr *TransactionsReads) GetTransactionDataByProviderChannelRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error) {
+	var transactionData []entity.PaymentDetailMerchantProvider
+
+	query := `
+	SELECT
+		t.ID AS transaction_id,
+		t.payment_id,
+		t.merchant_reference_number,
+		t.provider_reference_number,
+		t.transaction_amount,
+		t.bank_code,
+		t.status,
+		t.client_ip_address,
+		t.merchant_callback_url,
+		t.request_method,
+		pm.name AS payment_method_name,
+		pm.pay_type AS pay_type,
+		t.created_at AS transaction_created_at,
+		t.updated_at AS transaction_updated_at,
+		m.merchant_id,
+		m.merchant_name,
+		mp.merchant_payment_method_id,
+		mp.segment,
+		mp.fee AS merchant_fee,
+		mp.fee_type AS merchant_fee_type,
+		mp.status AS merchant_status,
+		mp.min_transaction AS merchant_min_transaction,
+		mp.max_transaction AS merchant_max_transaction,
+		mp.max_daily_transaction AS merchant_max_daily_transaction,
+		mp.merchant_paychannel_code,
+		mp.created_at AS merchant_created_at,
+		mp.updated_at AS merchant_updated_at,
+		p.provider_name,
+		pp.provider_payment_method_id,
+		pp.bank_code AS provider_bank_code,
+		pp.paychannel_name,
+		pp.fee AS provider_fee,
+		pp.fee_type AS provider_fee_type,
+		pp.status AS provider_status,
+		pp.min_transaction AS provider_min_transaction,
+		pp.max_transaction AS provider_max_transaction,
+		pp.max_daily_transaction AS provider_max_daily_transaction,
+		pp.interface_setting,
+		pp.created_at AS provider_created_at,
+		pp.updated_at AS provider_updated_at
+	FROM
+		transactions t
+		LEFT JOIN merchant_paychannels mp ON t.merchant_paychannel_id = mp.ID
+		JOIN merchant_payment_methods mpm ON mp.merchant_payment_method_id = mpm.ID
+		JOIN payment_methods pm ON mpm.payment_method_id = pm.ID
+		JOIN merchants m ON mpm.merchant_id = m.ID
+		LEFT JOIN provider_paychannels pp ON t.provider_paychannel_id = pp.ID
+		JOIN provider_payment_methods ppm ON pp.provider_payment_method_id = ppm.ID
+		JOIN providers p ON ppm.provider_id = p.ID
+	WHERE
+		t.merchant_paychannel_id IS NOT NULL
+		AND t.provider_paychannel_id IS NOT NULL
+		AND t.provider_paychannel_id = $1
+	`
+
+	var conditions []string
+
+	if payload.MinDate != "" {
+		conditions = append(conditions, fmt.Sprintf("t.created_at >= '%v'", payload.MinDate))
+	}
+
+	if payload.MaxDate != "" {
+		conditions = append(conditions, fmt.Sprintf("t.created_at <= '%v'", payload.MaxDate))
+	}
+
+	if len(conditions) > 0 {
+		query += " AND " + strings.Join(conditions, " AND ")
+	}
+
+	query += " ORDER BY t.created_at DESC"
+
+	err := tr.db.Select(&transactionData, query, payload.ProviderChannelId)
+	if err != nil {
+		return transactionData, err
+	}
+
+	return transactionData, nil
+}
+
 func buildTransactionQuery(params dto.QueryParams) (string, error) {
 	pageInt := converter.ToInt(params.Page)
 	pageSizeInt := converter.ToInt(params.PageSize)

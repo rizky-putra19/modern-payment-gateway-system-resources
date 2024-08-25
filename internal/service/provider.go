@@ -156,6 +156,43 @@ func (pr *Provider) GetListProviderChannelAllSvc(params dto.QueryParams) (dto.Re
 	return resp, nil
 }
 
+func (pr *Provider) GetProviderChannelAnalyticsSvc(payload dto.GetProviderAnalyticsDtoReq) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	transactionData, err := pr.transactionRepoReads.GetTransactionDataByProviderChannelRepo(payload)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	dataAnalytics := supportMerchantAnalyticsByMerchantPaychannelSvc(transactionData)
+
+	providerChannelData, err := pr.providerRepoReads.GetDetailProviderChannelById(payload.ProviderChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	analyticsResp := dto.ProviderChannelAnalyticsResDto{
+		AnalyticsData:         dataAnalytics,
+		ProviderChannelDetail: providerChannelData,
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            analyticsResp,
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

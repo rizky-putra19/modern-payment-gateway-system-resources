@@ -119,12 +119,12 @@ type HomeAnalyticsDataRespDto struct {
 }
 
 type AnalyticsDataRespDto struct {
-	TotalVolume        float64 `json:"totalVolume,omitempty"`
-	SuccessRate        string  `json:"successRate,omitempty"`
-	CompletionRate     string  `json:"completionRate,omitempty"`
-	TransactionTotal   int     `json:"transactionTotal,omitempty"`
-	SuccessTransaction int     `json:"successTransaction,omitempty"`
-	FailedTransaction  int     `json:"failedTransaction,omitempty"`
+	TotalVolume        float64 `json:"totalVolume"`
+	SuccessRate        string  `json:"successRate"`
+	CompletionRate     string  `json:"completionRate"`
+	TransactionTotal   int     `json:"transactionTotal"`
+	SuccessTransaction int     `json:"successTransaction"`
+	FailedTransaction  int     `json:"failedTransaction"`
 }
 
 type MerchantDataDtoRes struct {

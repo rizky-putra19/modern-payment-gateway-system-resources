@@ -156,3 +156,39 @@ func (ctrl *Controller) JackDisbursementCallbackCtrl(c echo.Context) error {
 		"message": "ok",
 	})
 }
+
+func (ctrl *Controller) GetProviderChannelAnalyticsCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	minDate := c.QueryParam("minDate")
+	maxdate := c.QueryParam("maxDate")
+	providerPaychannelId := c.QueryParam("providerChannelId")
+	intProviderChannelId := converter.ToInt(providerPaychannelId)
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if providerPaychannelId == "" {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "merchant id is mandatory",
+		})
+	}
+
+	payloadReq := dto.GetProviderAnalyticsDtoReq{
+		MinDate:           minDate,
+		MaxDate:           maxdate,
+		ProviderChannelId: intProviderChannelId,
+	}
+
+	providerAnalyticsChannelRes, err := ctrl.providerService.GetProviderChannelAnalyticsSvc(payloadReq)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, providerAnalyticsChannelRes)
+	}
+
+	return c.JSON(http.StatusOK, providerAnalyticsChannelRes)
+}

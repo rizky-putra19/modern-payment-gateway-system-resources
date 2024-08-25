@@ -55,6 +55,21 @@ type ProviderPaychannelAllEntity struct {
 	Status        string  `db:"status" json:"status"`
 }
 
+type ProviderChannelDetailEntity struct {
+	Id            int     `db:"id" json:"id"`
+	Paychannel    string  `db:"paychannel_name" json:"paychannel_name"`
+	Currency      string  `db:"currency" json:"currency"`
+	Provider      string  `db:"provider_name" json:"provider"`
+	PaymentType   string  `db:"pay_type" json:"paymentType"`
+	PaymentMethod string  `db:"name" json:"paymentMethod"`
+	Fee           float64 `db:"fee" json:"fee"`
+	FeeType       string  `db:"fee_type" json:"feeType"`
+	MinAmount     float64 `db:"min_transaction" json:"minAmount"`
+	MaxAmount     float64 `db:"max_transaction" json:"maxAmount"`
+	MaxDailyLimit float64 `db:"max_daily_transaction" json:"maxDailyLimit"`
+	Status        string  `db:"status" json:"status"`
+}
+
 type ProviderCredentialsEntity struct {
 	Id               int       `db:"id"`
 	ProviderId       string    `db:"provider_id"`

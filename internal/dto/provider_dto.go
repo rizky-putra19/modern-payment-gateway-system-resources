@@ -3,9 +3,10 @@ package dto
 import "github.com/hypay-id/backend-dashboard-hypay/internal/entity"
 
 type GetProviderAnalyticsDtoReq struct {
-	MinDate    string `json:"minDate"`
-	MaxDate    string `json:"maxDate"`
-	ProviderId int    `json:"providerId"`
+	MinDate           string `json:"minDate"`
+	MaxDate           string `json:"maxDate"`
+	ProviderId        int    `json:"providerId"`
+	ProviderChannelId int
 }
 
 type AnalyticsProviderRespDto struct {
@@ -133,4 +134,9 @@ type JackBalanceDetailData struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 	PartnerId int    `json:"partner_id"`
+}
+
+type ProviderChannelAnalyticsResDto struct {
+	AnalyticsData         AnalyticsDataRespDto               `json:"analyticsData"`
+	ProviderChannelDetail entity.ProviderChannelDetailEntity `json:"providerChannelDetailData"`
 }
