@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -19,6 +20,7 @@ type Provider struct {
 	transactionRepoReads internal.TransactionsReadsRepositoryItf
 	merchantRepoReads    internal.MerchantReadsRepositoryItf
 	providerRepoReads    internal.ProviderReadsRepositoryItf
+	providerRepoWrites   internal.ProviderWritesRepositoryItf
 	userRepoReads        internal.UserReadsRepositoryItf
 	config               config.App
 }
@@ -27,6 +29,7 @@ func NewProvider(
 	transactionRepoReads internal.TransactionsReadsRepositoryItf,
 	merchantRepoReads internal.MerchantReadsRepositoryItf,
 	providerRepoReads internal.ProviderReadsRepositoryItf,
+	providerRepoWrites internal.ProviderWritesRepositoryItf,
 	userRepoReads internal.UserReadsRepositoryItf,
 	config config.App,
 ) *Provider {
@@ -34,6 +37,7 @@ func NewProvider(
 		transactionRepoReads: transactionRepoReads,
 		merchantRepoReads:    merchantRepoReads,
 		providerRepoReads:    providerRepoReads,
+		providerRepoWrites:   providerRepoWrites,
 		userRepoReads:        userRepoReads,
 		config:               config,
 	}
@@ -197,6 +201,71 @@ func (pr *Provider) GetProviderChannelAnalyticsSvc(payload dto.GetProviderAnalyt
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: "success retrieve data",
 		Data:            analyticsResp,
+	}
+
+	return resp, nil
+}
+
+func (pr *Provider) UpdateFeeLimitInterfaceProviderChannelSvc(payload dto.AdjustLimitOrFeeProviderPayload) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	providerPaychannelData, err := pr.providerRepoReads.GetDetailProviderChannelById(payload.ProviderChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	// Use existing values if the new values are not provided
+	if payload.MaxAmount == nil {
+		payload.MaxAmount = &providerPaychannelData.MaxAmount
+	}
+
+	if payload.MinAmount == nil {
+		payload.MinAmount = &providerPaychannelData.MinAmount
+	}
+
+	if payload.MaxDailyLimit == nil {
+		payload.MaxDailyLimit = &providerPaychannelData.MaxDailyLimit
+	}
+
+	if payload.Fee == nil {
+		payload.Fee = &providerPaychannelData.Fee
+	}
+
+	if payload.FeeType == nil {
+		payload.FeeType = &providerPaychannelData.FeeType
+	}
+
+	if payload.InterfaceSetting == nil {
+		payload.InterfaceSetting = &providerPaychannelData.InterfaceSetting
+	}
+
+	// update provider channel
+	err = pr.providerRepoWrites.UpdateProviderPaychannelByIdRepo(payload)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	providerChannelUpdated, err := pr.providerRepoReads.GetDetailProviderChannelById(payload.ProviderChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: fmt.Sprintf("Successfully updated merchant pay channel with id: %v", payload.ProviderChannelId),
+		Data:            providerChannelUpdated,
 	}
 
 	return resp, nil

@@ -106,4 +106,5 @@ type ProviderReadsRepositoryItf interface {
 
 type ProviderWritesRepositoryItf interface {
 	CreateProviderConfirmationDetail(source string, paymentId string, status string) (int, error)
+	UpdateProviderPaychannelByIdRepo(payload dto.AdjustLimitOrFeeProviderPayload) error
 }

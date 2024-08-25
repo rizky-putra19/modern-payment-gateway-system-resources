@@ -41,6 +41,7 @@ func New(
 		repoReads.TransactionsReads,
 		repoReads.MerchantReads,
 		repoReads.ProviderReads,
+		repoWrites.ProviderWrites,
 		repoReads.UserReads,
 		cfg,
 	)

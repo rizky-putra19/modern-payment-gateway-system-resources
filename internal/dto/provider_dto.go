@@ -140,3 +140,13 @@ type ProviderChannelAnalyticsResDto struct {
 	AnalyticsData         AnalyticsDataRespDto               `json:"analyticsData"`
 	ProviderChannelDetail entity.ProviderChannelDetailEntity `json:"providerChannelDetailData"`
 }
+
+type AdjustLimitOrFeeProviderPayload struct {
+	ProviderChannelId int      `json:"providerChannelId"`
+	MinAmount         *float64 `json:"minAmount,omitempty"`
+	MaxAmount         *float64 `json:"maxAmount,omitempty"`
+	MaxDailyLimit     *float64 `json:"maxDailyAmount,omitempty"`
+	Fee               *float64 `json:"fee,omitempty"`
+	FeeType           *string  `json:"feeType,omitempty"`
+	InterfaceSetting  *string  `json:"interfaceSetting,omitempty"`
+}

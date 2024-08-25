@@ -1,6 +1,14 @@
 package psql
 
-import "github.com/jmoiron/sqlx"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
+	"github.com/jmoiron/sqlx"
+)
 
 type ProviderWrites struct {
 	db *sqlx.DB
@@ -28,4 +36,56 @@ func (pw *ProviderWrites) CreateProviderConfirmationDetail(source string, paymen
 	}
 
 	return id, nil
+}
+
+func (pw *ProviderWrites) UpdateProviderPaychannelByIdRepo(payload dto.AdjustLimitOrFeeProviderPayload) error {
+	query := "UPDATE provider_paychannels SET "
+	var conditions []string
+	var args []interface{}
+
+	if payload.Fee != nil {
+		conditions = append(conditions, fmt.Sprintf("fee = $%d", len(args)+1))
+		args = append(args, *payload.Fee)
+	}
+
+	if payload.FeeType != nil {
+		conditions = append(conditions, fmt.Sprintf("fee_type = $%d", len(args)+1))
+		args = append(args, *payload.FeeType)
+	}
+
+	if payload.MinAmount != nil {
+		conditions = append(conditions, fmt.Sprintf("min_transaction = $%d", len(args)+1))
+		args = append(args, *payload.MinAmount)
+	}
+
+	if payload.MaxAmount != nil {
+		conditions = append(conditions, fmt.Sprintf("max_transaction = $%d", len(args)+1))
+		args = append(args, *payload.MaxAmount)
+	}
+
+	if payload.MaxDailyLimit != nil {
+		conditions = append(conditions, fmt.Sprintf("max_daily_transaction = $%d", len(args)+1))
+		args = append(args, *payload.MaxDailyLimit)
+	}
+
+	if payload.InterfaceSetting != nil {
+		conditions = append(conditions, fmt.Sprintf("interface_setting = $%d", len(args)+1))
+		args = append(args, *payload.InterfaceSetting)
+	}
+
+	if len(conditions) == 0 {
+		return errors.New("no fields to update")
+	}
+
+	query += strings.Join(conditions, ", ")
+	query += ", updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta' "
+	query += "WHERE id = $" + strconv.Itoa(len(args)+1)
+	args = append(args, payload.ProviderChannelId)
+
+	_, err := pw.db.Exec(query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

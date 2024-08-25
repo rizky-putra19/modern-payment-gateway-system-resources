@@ -19,6 +19,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	ops.PATCH("/merchant-update-status", ctrl.AuthMiddleware(ctrl.UpdateMerchantStatusCtrl))
 	ops.PATCH("/merchant-paychannel-update-status", ctrl.AuthMiddleware(ctrl.UpdateStatusMerchantPaychannel))
 	ops.PATCH("/update-fee-limit", ctrl.AuthMiddleware(ctrl.UpdateLimitOrFeeCtrl))
+	ops.PATCH("/update-fee-limit-interface-pchannel", ctrl.AuthMiddleware(ctrl.UpdateLimitFeeInterfacePchannelCtrl))
 
 	// GET method
 	ops.GET("/transaction-list", ctrl.AuthMiddleware(ctrl.GetListTransaction))

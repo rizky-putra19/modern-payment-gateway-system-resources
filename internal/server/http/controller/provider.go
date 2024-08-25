@@ -6,6 +6,7 @@ import (
 	"github.com/hypay-id/backend-dashboard-hypay/internal/constant"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/converter"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/helper"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/slog"
 	"github.com/labstack/echo/v4"
 )
@@ -191,4 +192,56 @@ func (ctrl *Controller) GetProviderChannelAnalyticsCtrl(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, providerAnalyticsChannelRes)
+}
+
+func (ctrl *Controller) UpdateLimitFeeInterfacePchannelCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	var payload dto.AdjustLimitOrFeeProviderPayload
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can adjust fee and limit",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.ProviderChannelId == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "provider paychannel id is mandatory",
+		})
+	}
+
+	if payload.FeeType != nil {
+		if !helper.StringInSlice(*payload.FeeType, constant.FeeType) {
+			return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				ResponseCode:    http.StatusBadRequest,
+				ResponseMessage: "Fee type only FIXED_FEE and PERCENTAGE",
+			})
+		}
+	}
+
+	adjustResp, err := ctrl.providerService.UpdateFeeLimitInterfaceProviderChannelSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, adjustResp)
+	}
+
+	return c.JSON(http.StatusOK, adjustResp)
 }
