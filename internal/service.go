@@ -28,6 +28,7 @@ type TransactionServiceItf interface {
 	CountDisbursementTotalAmountSvc(payload dto.CountDisbursementTotalAmountDto) (dto.ResponseDto, error)
 	JackDisbursementCallbackHandlingSvc(payload dto.CreateDisbursementRequestResponseData) (string, error)
 	GetReportListMerchantSvc(req dto.GetListMerchantExportFilter, username string) (dto.ResponseDto, error)
+	CreateReportMerchantSvc(req dto.CreateReportMerchantReqDto) (dto.ResponseDto, error)
 }
 
 type MerchantServiceItf interface {

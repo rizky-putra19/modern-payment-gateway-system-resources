@@ -2130,7 +2130,87 @@ func (tr *Transaction) GetReportListMerchantSvc(req dto.GetListMerchantExportFil
 	return resp, nil
 }
 
+func (tr *Transaction) CreateReportMerchantSvc(req dto.CreateReportMerchantReqDto) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	generateRandomNumber := helper.GenerateRandomString(5)
+	fileName := fmt.Sprintf("merchant%v-%v.xlsx", generateRandomNumber, constant.TransformExportType[req.ExportType])
+
+	user, err := tr.userRepoReads.GetUserByUsername(req.Username)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	req.MerchantId = *user.MerchantID
+	payloadReport := dto.CreateMerchantExportReqDto{
+		ExportType: req.ExportType,
+		MinDate:    req.MinDate,
+		MaxDate:    req.MaxDate,
+		MerchantId: req.MerchantId,
+		UserType:   req.UserType,
+	}
+
+	go func() {
+		_, err := tr.supportExportTypeCapitalFlow(payloadReport, fileName)
+		if err != nil {
+			slog.Infof("Error in supportExportTypeCapitalFlow: %v", err)
+
+			if err.Error() == "data empty" {
+				// update report list with status Error
+				err = tr.transactionRepoWrites.UpdateReportStoragesByFileName("no url", fileName, constant.ReportStatusNoData)
+				if err != nil {
+					return
+				}
+				return
+			}
+
+			// update report list with status Error
+			err = tr.transactionRepoWrites.UpdateReportStoragesByFileName("no url", fileName, constant.ReportStatusError)
+			if err != nil {
+				return
+			}
+			return
+		}
+	}()
+
+	// payload list storage
+	minExtract, _ := helper.ExtractDate(req.MinDate)
+	maxExtract, _ := helper.ExtractDate(req.MaxDate)
+	period := fmt.Sprintf("%v - %v", minExtract, maxExtract)
+	reportPayload := dto.CreateReportStorageDto{
+		MerchantId:    *user.MerchantID,
+		Period:        period,
+		ExportType:    req.ExportType,
+		Status:        constant.ReportStatusPending,
+		ReportUrl:     "",
+		CreatedByUser: req.UserType,
+		FileName:      fileName,
+	}
+
+	// create list report storages
+	id, err := tr.transactionRepoWrites.CreateListReportStoragesRepo(reportPayload)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Success",
+		Data:            fmt.Sprintf("Success create report with id: %v", id),
+	}
+
+	return resp, nil
+}
+
 func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantExportReqDto, fileName string) (string, error) {
+	var headers []string
 
 	// get data for create excel
 	list, err := tr.transactionRepoWrites.CreateMerchantExportCapitalFlowRepo(payload)
@@ -2143,49 +2223,92 @@ func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantEx
 		return "", errors.New("data empty")
 	}
 
-	headers := []string{
-		"Payment ID",
-		"Merchant ID",
-		"Merchant Name",
-		"Amount",
-		"Reason Name",
-		"Payment Method",
-		"Merchant Fee",
-		"Merchant Fee Type",
-		"Merchant Balance",
-		"Provider",
-		"Paychannel Routed",
-		"Provider Fee",
-		"Provider Fee Type",
-		"Status",
-		"Notes",
-		"Capital Type",
-		"Reverse From",
-		"Created At",
+	data := make([][]interface{}, len(list))
+
+	if payload.UserType == constant.UserMerchant {
+		headers = []string{
+			"Payment ID",
+			"Merchant ID",
+			"Merchant Name",
+			"Amount",
+			"Reason Name",
+			"Payment Method",
+			"Merchant Fee",
+			"Merchant Fee Type",
+			"Merchant Balance",
+			"Status",
+			"Notes",
+			"Capital Type",
+			"Reverse From",
+			"Created At",
+		}
+
+		// Prepare data for Excel
+		for i, item := range list {
+			data[i] = []interface{}{
+				item.PaymentId,
+				nullSafeString(item.MerchantId),
+				nullSafeString(item.MerchantName),
+				nullSafeFloat64(item.Amount),
+				nullSafeString(item.ReasonName),
+				nullSafeString(item.PaymentMethod),
+				nullSafeFloat64(item.Fee),
+				nullSafeString(item.FeeType),
+				nullSafeFloat64(item.MerchantBalance),
+				nullSafeString(item.Status),
+				nullSafeString(item.Notes),
+				nullSafeString(item.CapitalType),
+				nullSafeString(item.ReverseFrom),
+				item.CreatedAt,
+			}
+		}
 	}
 
-	// Prepare data for Excel
-	data := make([][]interface{}, len(list))
-	for i, item := range list {
-		data[i] = []interface{}{
-			item.PaymentId,
-			nullSafeString(item.MerchantId),
-			nullSafeString(item.MerchantName),
-			nullSafeFloat64(item.Amount),
-			nullSafeString(item.ReasonName),
-			nullSafeString(item.PaymentMethod),
-			nullSafeFloat64(item.Fee),
-			nullSafeString(item.FeeType),
-			nullSafeFloat64(item.MerchantBalance),
-			nullSafeString(item.Provider),
-			nullSafeString(item.PaychannelRouted),
-			nullSafeFloat64(item.ProviderFee),
-			nullSafeString(item.ProviderFeeType),
-			nullSafeString(item.Status),
-			nullSafeString(item.Notes),
-			nullSafeString(item.CapitalType),
-			nullSafeString(item.ReverseFrom),
-			item.CreatedAt,
+	if payload.UserType == constant.UserOperation {
+
+		headers = []string{
+			"Payment ID",
+			"Merchant ID",
+			"Merchant Name",
+			"Amount",
+			"Reason Name",
+			"Payment Method",
+			"Merchant Fee",
+			"Merchant Fee Type",
+			"Merchant Balance",
+			"Provider",
+			"Paychannel Routed",
+			"Provider Fee",
+			"Provider Fee Type",
+			"Status",
+			"Notes",
+			"Capital Type",
+			"Reverse From",
+			"Created At",
+		}
+
+		// Prepare data for Excel
+		for i, item := range list {
+			data[i] = []interface{}{
+				item.PaymentId,
+				nullSafeString(item.MerchantId),
+				nullSafeString(item.MerchantName),
+				nullSafeFloat64(item.Amount),
+				nullSafeString(item.ReasonName),
+				nullSafeString(item.PaymentMethod),
+				nullSafeFloat64(item.Fee),
+				nullSafeString(item.FeeType),
+				nullSafeFloat64(item.MerchantBalance),
+				nullSafeString(item.Provider),
+				nullSafeString(item.PaychannelRouted),
+				nullSafeFloat64(item.ProviderFee),
+				nullSafeString(item.ProviderFeeType),
+				nullSafeString(item.Status),
+				nullSafeString(item.Notes),
+				nullSafeString(item.CapitalType),
+				nullSafeString(item.ReverseFrom),
+				item.CreatedAt,
+			}
 		}
 	}
 

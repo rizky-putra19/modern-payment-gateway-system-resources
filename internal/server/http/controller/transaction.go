@@ -498,3 +498,51 @@ func (ctrl *Controller) CountDisbursementTotalAmountCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, totalAmountResp)
 }
+
+func (ctrl *Controller) CreateMerchantReportCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	username := c.Get("username").(string)
+	var payload dto.CreateReportMerchantReqDto
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin && roleName != constant.RoleNameFinance {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin and finance can create report",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.ExportType == "" ||
+		payload.MaxDate == "" ||
+		payload.MinDate == "" {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "all payload is mandatory",
+		})
+	}
+
+	payload.UserType = userType
+	payload.Username = username
+	reportRes, err := ctrl.transactionService.CreateReportMerchantSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, reportRes)
+	}
+
+	return c.JSON(http.StatusOK, reportRes)
+}

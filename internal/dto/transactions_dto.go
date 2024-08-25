@@ -66,6 +66,15 @@ type CreateMerchantExportReqDto struct {
 	UserType   string
 }
 
+type CreateReportMerchantReqDto struct {
+	ExportType string `json:"exportType"`
+	MinDate    string `json:"minDate"`
+	MaxDate    string `json:"maxDate"`
+	MerchantId string `json:"merchantId"`
+	UserType   string
+	Username   string
+}
+
 type GetListMerchantExportFilter struct {
 	ExportType   string `json:"exportType"`
 	MinDate      string `json:"minDate"`

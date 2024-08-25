@@ -96,4 +96,5 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.POST("/disbursement", ctrl.AuthMiddleware(ctrl.DisbursementCtrl))
 	mrn.POST("/count-disbursement", ctrl.AuthMiddleware(ctrl.CountDisbursementTotalAmountCtrl))
 	mrn.POST("/provider-jack/disbursement", ctrl.JackDisbursementCallbackCtrl)
+	mrn.POST("/create-report", ctrl.AuthMiddleware(ctrl.CreateMerchantReportCtrl))
 }
