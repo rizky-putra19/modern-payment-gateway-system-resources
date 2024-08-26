@@ -150,3 +150,9 @@ type AdjustLimitOrFeeProviderPayload struct {
 	FeeType           *string  `json:"feeType,omitempty"`
 	InterfaceSetting  *string  `json:"interfaceSetting,omitempty"`
 }
+
+type AddOperatorProviderChannelPayload struct {
+	ProviderChannelId int    `json:"providerChannelId"`
+	BankCode          string `json:"bankCode"`
+	CheckListFlagging bool   `json:"checkListFlagging"`
+}

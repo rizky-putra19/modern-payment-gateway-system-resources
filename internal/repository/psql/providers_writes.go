@@ -89,3 +89,34 @@ func (pw *ProviderWrites) UpdateProviderPaychannelByIdRepo(payload dto.AdjustLim
 
 	return nil
 }
+
+func (pw *ProviderWrites) AddOperatorProviderChannelRepo(providerChannelId int, bankListId int) (int, error) {
+	var id int
+
+	query := `
+	INSERT INTO provider_paychannel_bank_lists (provider_paychannel_id, bank_list_id, created_at, updated_at)
+	VALUES ($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+	RETURNING id
+	`
+
+	row := pw.db.QueryRow(query, providerChannelId, bankListId)
+	err := row.Scan(&id)
+	if err != nil && id == 0 {
+		return id, err
+	}
+	return id, nil
+}
+
+func (pw *ProviderWrites) DeleteOperatorProviderChannelRepo(providerChannelId int, bankListId int) error {
+	query := `
+	DELETE FROM provider_paychannel_bank_lists
+	WHERE provider_paychannel_id = $1
+		AND bank_list_id = $2;
+	`
+
+	_, err := pw.db.Exec(query, providerChannelId, bankListId)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -440,3 +440,26 @@ func (pr *ProviderReads) GetListRoutedProviderChannelRepo(providerChannelId int)
 
 	return listRoutedProviderChannels, nil
 }
+
+func (pr *ProviderReads) GetProviderBankListChannelRepo(providerChannelId int, bankListId int) (entity.ProviderPaychannelBankListEntity, error) {
+	var resp entity.ProviderPaychannelBankListEntity
+
+	query := `
+	SELECT
+		ppbl.ID,
+		ppbl.provider_paychannel_id,
+		ppbl.bank_list_id,
+		ppbl.created_at
+	FROM
+		provider_paychannel_bank_lists ppbl
+	WHERE ppbl.provider_paychannel_id = $1
+	AND ppbl.bank_list_id = $2;
+	`
+
+	err := pr.db.Get(&resp, query, providerChannelId, bankListId)
+	if err != nil && err != sql.ErrNoRows {
+		return resp, err
+	}
+
+	return resp, nil
+}

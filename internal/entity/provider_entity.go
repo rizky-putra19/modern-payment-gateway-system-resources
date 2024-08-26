@@ -95,3 +95,10 @@ type ProviderRoutedChannelEntity struct {
 	CreatedAt               time.Time `db:"created_at" json:"createdAt"`
 	PaymentMethodName       string    `db:"name" json:"-"`
 }
+
+type ProviderPaychannelBankListEntity struct {
+	Id                   int       `db:"id" json:"id"`
+	ProviderPaychannelId int       `db:"provider_paychannel_id" json:"providerPaychannelId"`
+	BankListId           int       `db:"bank_list_id" json:"bankListId"`
+	CreatedAt            time.Time `db:"created_at" json:"createdAt"`
+}

@@ -362,6 +362,83 @@ func (pr *Provider) GetListRoutedProviderChannelSvc(providerChannelId int) (dto.
 	return resp, nil
 }
 
+func (pr *Provider) AddOperatorProviderChannelSvc(payload []dto.AddOperatorProviderChannelPayload) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	for _, load := range payload {
+		if load.CheckListFlagging {
+			bankDetailData, err := pr.transactionRepoReads.GetBankDataDetailByBankCodeRepo(load.BankCode)
+			if err != nil {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: err.Error(),
+				}
+				return resp, err
+			}
+
+			// checking if it exist to avoid double input
+			operatorRes, err := pr.providerRepoReads.GetProviderBankListChannelRepo(load.ProviderChannelId, bankDetailData.Id)
+			if err != nil {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: err.Error(),
+				}
+				return resp, err
+			}
+
+			if operatorRes.Id == 0 {
+				//create provider channel operator
+				_, err = pr.providerRepoWrites.AddOperatorProviderChannelRepo(load.ProviderChannelId, bankDetailData.Id)
+				if err != nil {
+					resp = dto.ResponseDto{
+						ResponseCode:    http.StatusUnprocessableEntity,
+						ResponseMessage: err.Error(),
+					}
+					return resp, err
+				}
+			}
+		} else {
+			bankDetailData, err := pr.transactionRepoReads.GetBankDataDetailByBankCodeRepo(load.BankCode)
+			if err != nil {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: err.Error(),
+				}
+				return resp, err
+			}
+
+			// checking if it exist to avoid double input
+			operatorRes, err := pr.providerRepoReads.GetProviderBankListChannelRepo(load.ProviderChannelId, bankDetailData.Id)
+			if err != nil {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: err.Error(),
+				}
+				return resp, err
+			}
+
+			if operatorRes.Id != 0 {
+				// deleted if false
+				err = pr.providerRepoWrites.DeleteOperatorProviderChannelRepo(load.ProviderChannelId, bankDetailData.Id)
+				if err != nil {
+					resp = dto.ResponseDto{
+						ResponseCode:    http.StatusUnprocessableEntity,
+						ResponseMessage: err.Error(),
+					}
+					return resp, err
+				}
+			}
+		}
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success add/remove bank channel",
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

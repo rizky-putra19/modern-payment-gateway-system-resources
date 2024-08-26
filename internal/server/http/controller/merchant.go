@@ -220,7 +220,7 @@ func (ctrl *Controller) HoldBalanceCtrl(c echo.Context) error {
 	if roleName != constant.RoleNameAdmin && roleName != constant.RoleNameFinance {
 		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
 			ResponseCode:    http.StatusBadGateway,
-			ResponseMessage: "only admin and finance can do top up",
+			ResponseMessage: "only admin and finance can do hold balance",
 		})
 	}
 

@@ -23,6 +23,7 @@ type TransactionsReadsRepositoryItf interface {
 	GetTransactionOutListRepo(params dto.QueryParams) ([]entity.MerchantTransactionList, dto.PaginatedResponse, error)
 	GetBankDataDetailRepo(bankName string) (entity.BankListDto, error)
 	GetTransactionDataByProviderChannelRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
+	GetBankDataDetailByBankCodeRepo(bankCode string) (entity.BankListDto, error)
 }
 
 type TransactionsWritesRepositoryItf interface {
@@ -105,9 +106,12 @@ type ProviderReadsRepositoryItf interface {
 	GetBankListProviderMethodRepo(providerChannelId int) ([]entity.BankListDto, error)
 	GetBankListProviderChannelRepo(providerChannelId int) ([]entity.BankListDto, error)
 	GetListRoutedProviderChannelRepo(providerChannelId int) ([]entity.ProviderRoutedChannelEntity, error)
+	GetProviderBankListChannelRepo(providerChannelId int, bankListId int) (entity.ProviderPaychannelBankListEntity, error)
 }
 
 type ProviderWritesRepositoryItf interface {
 	CreateProviderConfirmationDetail(source string, paymentId string, status string) (int, error)
 	UpdateProviderPaychannelByIdRepo(payload dto.AdjustLimitOrFeeProviderPayload) error
+	AddOperatorProviderChannelRepo(providerChannelId int, bankListId int) (int, error)
+	DeleteOperatorProviderChannelRepo(providerChannelId int, bankListId int) error
 }

@@ -856,6 +856,28 @@ func (tr *TransactionsReads) GetBankDataDetailRepo(bankName string) (entity.Bank
 	return bankData, nil
 }
 
+func (tr *TransactionsReads) GetBankDataDetailByBankCodeRepo(bankCode string) (entity.BankListDto, error) {
+	var bankData entity.BankListDto
+
+	query := `
+	SELECT
+		bl.ID,
+		bl.bank_name,
+		bl.bank_code,
+		bl.created_at
+	FROM
+		bank_lists bl
+	WHERE bl.bank_code = $1;
+	`
+
+	err := tr.db.Get(&bankData, query, bankCode)
+	if err != nil {
+		return bankData, err
+	}
+
+	return bankData, nil
+}
+
 func (tr *TransactionsReads) GetTransactionDataByProviderChannelRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error) {
 	var transactionData []entity.PaymentDetailMerchantProvider
 

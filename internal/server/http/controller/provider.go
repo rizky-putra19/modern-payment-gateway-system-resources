@@ -287,3 +287,46 @@ func (ctrl *Controller) GetListRoutedProviderChannelCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, listRoutedRes)
 }
+
+func (ctrl *Controller) AddOperatorProviderChannelCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	var payload []dto.AddOperatorProviderChannelPayload
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can add bank list",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload[0].BankCode == "" || payload[0].ProviderChannelId == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "bank code and provider channel id is mandatory",
+		})
+	}
+
+	addOperatorFlaggingRes, err := ctrl.providerService.AddOperatorProviderChannelSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, addOperatorFlaggingRes)
+	}
+
+	return c.JSON(http.StatusOK, addOperatorFlaggingRes)
+}
