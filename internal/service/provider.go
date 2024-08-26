@@ -309,6 +309,59 @@ func (pr *Provider) GetProviderChannelOperatorSvc(providerChannelId int) (dto.Re
 	return resp, nil
 }
 
+func (pr *Provider) GetListRoutedProviderChannelSvc(providerChannelId int) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	listRoutedProviderChannel, err := pr.providerRepoReads.GetListRoutedProviderChannelRepo(providerChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	if len(listRoutedProviderChannel) == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusOK,
+			ResponseMessage: "data not found",
+		}
+		return resp, nil
+	}
+
+	for i := range listRoutedProviderChannel {
+		availableChannel, err := pr.providerRepoReads.CountProviderChannelByPaymentMethodRepo(listRoutedProviderChannel[i].PaymentMethodName)
+		if err != nil {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: err.Error(),
+			}
+			return resp, err
+		}
+		availableChannelStr := converter.ToString(availableChannel)
+
+		activeChannel, err := pr.providerRepoReads.CountActiveProviderChannelRepo(listRoutedProviderChannel[i].Id)
+		if err != nil {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: err.Error(),
+			}
+			return resp, err
+		}
+		activeChannelStr := converter.ToString(activeChannel)
+		activeAvailableChannel := activeChannelStr + "/" + availableChannelStr
+		listRoutedProviderChannel[i].ActiveAvailableChannels = activeAvailableChannel
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            listRoutedProviderChannel,
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

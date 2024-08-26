@@ -80,3 +80,18 @@ type ProviderCredentialsEntity struct {
 	CreatedAt        time.Time `db:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at"`
 }
+
+type ProviderRoutedChannelEntity struct {
+	Id                      int       `db:"id" json:"id"`
+	PaychannelName          string    `db:"merchant_paychannel_code" json:"paychannelName"`
+	MerchantName            string    `db:"merchant_name" json:"merchantName"`
+	Fee                     float64   `db:"fee" json:"fee"`
+	FeeType                 string    `db:"fee_type" json:"feeType"`
+	Status                  string    `db:"status" json:"status"`
+	ActiveAvailableChannels string    `json:"activeAvailableChannels"`
+	MinTransaction          float64   `db:"min_transaction" json:"minTransaction"`
+	MaxTransaction          float64   `db:"max_transaction" json:"maxTransaction"`
+	MaxDailyTransaction     string    `db:"max_daily_transaction" json:"maxDailyTransaction"`
+	CreatedAt               time.Time `db:"created_at" json:"createdAt"`
+	PaymentMethodName       string    `db:"name" json:"-"`
+}

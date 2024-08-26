@@ -89,4 +89,5 @@ type ProviderServiceItf interface {
 	GetProviderChannelAnalyticsSvc(payload dto.GetProviderAnalyticsDtoReq) (dto.ResponseDto, error)
 	UpdateFeeLimitInterfaceProviderChannelSvc(payload dto.AdjustLimitOrFeeProviderPayload) (dto.ResponseDto, error)
 	GetProviderChannelOperatorSvc(providerChannelId int) (dto.ResponseDto, error)
+	GetListRoutedProviderChannelSvc(providerChannelId int) (dto.ResponseDto, error)
 }

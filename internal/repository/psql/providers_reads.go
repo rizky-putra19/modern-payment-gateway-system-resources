@@ -405,3 +405,38 @@ func (pr *ProviderReads) GetBankListProviderChannelRepo(providerChannelId int) (
 
 	return bankList, nil
 }
+
+func (pr *ProviderReads) GetListRoutedProviderChannelRepo(providerChannelId int) ([]entity.ProviderRoutedChannelEntity, error) {
+	var listRoutedProviderChannels []entity.ProviderRoutedChannelEntity
+
+	query := `
+	SELECT
+		mp.ID,
+		mp.merchant_paychannel_code,
+		m.merchant_name,
+		mp.fee,
+		mp.fee_type,
+		mp.status,
+		mp.min_transaction,
+		mp.max_transaction,
+		mp.max_daily_transaction,
+		mp.created_at,
+		pm.name
+	FROM
+		paychannel_routings pr
+		JOIN merchant_paychannels mp ON pr.merchant_paychannel_id = mp.ID
+		JOIN merchant_payment_methods mpm ON mp.merchant_payment_method_id = mpm.ID
+		JOIN payment_methods pm ON pm.ID = mpm.payment_method_id
+		JOIN merchants m ON m.ID = mpm.merchant_id
+	WHERE
+		pr.provider_paychannel_id = $1
+	ORDER BY pr.created_at DESC;
+	`
+
+	err := pr.db.Select(&listRoutedProviderChannels, query, providerChannelId)
+	if err != nil && err != sql.ErrNoRows {
+		return listRoutedProviderChannels, err
+	}
+
+	return listRoutedProviderChannels, nil
+}
