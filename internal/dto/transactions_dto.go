@@ -150,6 +150,8 @@ type CreateTransactionsDto struct {
 	BankCode                string
 	Status                  string
 	RequestMethod           string
+	IpAddress               string
+	CallbackUrl             string
 }
 
 type ChannelIdCodeDisbursement struct {

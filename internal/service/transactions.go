@@ -2433,6 +2433,8 @@ func (tr *Transaction) jackSupportDisbursement(credentials []entity.ProviderCred
 		BankCode:                channelCodeId.BankCode,
 		Status:                  constant.StatusProcessing,
 		RequestMethod:           "MERCHANT_DASHBOARD",
+		IpAddress:               constant.IpAddressHypay,
+		CallbackUrl:             constant.CallbackUrlHypay,
 	}
 
 	_, err = tr.transactionRepoWrites.CreateTransactionsRepo(createTransactionPayload)

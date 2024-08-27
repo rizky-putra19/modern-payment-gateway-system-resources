@@ -8,6 +8,11 @@ const GeneralErrMsg = "failed to do disbursement, please ask admin for more info
 const BankAccountNameSimilarityMatchInPercent = 0.3
 
 const (
+	IpAddressHypay   = "0.0.0.0"
+	CallbackUrlHypay = "https://www.hypay.id"
+)
+
+const (
 	ReasonNameSettlement     = "Settlement"
 	ReasonNameInTransaction  = "In"
 	ReasonNameOutTransaction = "Out"

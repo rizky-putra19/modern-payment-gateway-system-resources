@@ -318,12 +318,12 @@ func (tr *TransactionsWrites) CreateTransactionsRepo(payload dto.CreateTransacti
 	var transactionId int
 
 	query := `
-	INSERT INTO transactions (payment_id, merchant_reference_number, provider_reference_number, merchant_paychannel_id, provider_paychannel_id, transaction_amount, bank_code, status, request_method, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+	INSERT INTO transactions (payment_id, merchant_reference_number, provider_reference_number, merchant_paychannel_id, provider_paychannel_id, transaction_amount, bank_code, status, request_method, client_ip_address, merchant_callback_url,created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
 	RETURNING id
 	`
 
-	row := tr.db.QueryRow(query, payload.PaymentId, payload.MerchantReferenceNumber, payload.ProviderReferenceNumber, payload.MerchantPaychanneId, payload.ProviderPaychannelId, payload.TransactionAmount, payload.BankCode, payload.Status, payload.RequestMethod)
+	row := tr.db.QueryRow(query, payload.PaymentId, payload.MerchantReferenceNumber, payload.ProviderReferenceNumber, payload.MerchantPaychanneId, payload.ProviderPaychannelId, payload.TransactionAmount, payload.BankCode, payload.Status, payload.RequestMethod, payload.IpAddress, payload.CallbackUrl)
 	err := row.Scan(&transactionId)
 	if err != nil || transactionId == 0 {
 		return transactionId, err
@@ -344,7 +344,7 @@ func (tr *TransactionsWrites) CreateAccountInformationRepo(payload dto.CreateAcc
 	if payload.AccountNumber == "" && payload.AccountName == "" && payload.BankCode == "" && payload.BankName == "" && payload.ReferenceNumber == "" {
 		query = `
 		INSERT INTO account_informations (payment_id, account_type, created_at)
-		VALUES ($1, $2, $3, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+		VALUES ($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
 		RETURNING id
 		`
 
