@@ -120,3 +120,19 @@ func (pw *ProviderWrites) DeleteOperatorProviderChannelRepo(providerChannelId in
 	}
 	return nil
 }
+
+func (pw *ProviderWrites) UpdateStatusProviderPaychannelRepo(id int, status string) error {
+	query := `
+	UPDATE provider_paychannels
+	SET
+		status = $1,
+		updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'
+	WHERE id = $2;
+	`
+
+	_, err := pw.db.Exec(query, status, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

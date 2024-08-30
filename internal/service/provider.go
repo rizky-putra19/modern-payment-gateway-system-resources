@@ -376,6 +376,14 @@ func (pr *Provider) AddOperatorProviderChannelSvc(payload []dto.AddOperatorProvi
 				return resp, err
 			}
 
+			if bankDetailData.Id == 0 {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: "data not found, maybe wrong bank code",
+				}
+				return resp, errors.New("data not found, maybe wrong bank code")
+			}
+
 			// checking if it exist to avoid double input
 			operatorRes, err := pr.providerRepoReads.GetProviderBankListChannelRepo(load.ProviderChannelId, bankDetailData.Id)
 			if err != nil {
@@ -434,6 +442,58 @@ func (pr *Provider) AddOperatorProviderChannelSvc(payload []dto.AddOperatorProvi
 	resp = dto.ResponseDto{
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: "success add/remove bank channel",
+	}
+
+	return resp, nil
+}
+
+func (pr *Provider) ActiveOrDeactivateProviderPaychannelIdSvc(payload dto.UpdateStatusProviderPaychannelDto) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	status := constant.StatusActive
+
+	providerPaychannelDetail, err := pr.providerRepoReads.GetDetailProviderChannelById(payload.ProviderChannelId)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	if providerPaychannelDetail.Id == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "wrong provider channel id",
+		}
+		return resp, errors.New("wrong provider channel id")
+	}
+
+	if providerPaychannelDetail.Status == constant.StatusActive {
+		status = constant.StatusInactive
+	}
+
+	// check if fee already set
+	if providerPaychannelDetail.Fee == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "can't activate need have to set fee first",
+		}
+		return resp, errors.New("need to set fee")
+	}
+
+	// update status provider paychannel
+	err = pr.providerRepoWrites.UpdateStatusProviderPaychannelRepo(payload.ProviderChannelId, status)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: fmt.Sprintf("success update status for provider paychannel id %v", payload.ProviderChannelId),
 	}
 
 	return resp, nil

@@ -92,4 +92,5 @@ type ProviderServiceItf interface {
 	GetProviderChannelOperatorSvc(providerChannelId int) (dto.ResponseDto, error)
 	GetListRoutedProviderChannelSvc(providerChannelId int) (dto.ResponseDto, error)
 	AddOperatorProviderChannelSvc(payload []dto.AddOperatorProviderChannelPayload) (dto.ResponseDto, error)
+	ActiveOrDeactivateProviderPaychannelIdSvc(payload dto.UpdateStatusProviderPaychannelDto) (dto.ResponseDto, error)
 }

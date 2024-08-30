@@ -156,3 +156,7 @@ type AddOperatorProviderChannelPayload struct {
 	BankCode          string `json:"bankCode"`
 	CheckListFlagging bool   `json:"checkListFlagging"`
 }
+
+type UpdateStatusProviderPaychannelDto struct {
+	ProviderChannelId int `json:"providerChannelId"`
+}

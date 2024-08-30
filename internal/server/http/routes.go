@@ -18,6 +18,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	ops.PATCH("/update-status", ctrl.AuthMiddleware(ctrl.UpdateStatusTransaction))
 	ops.PATCH("/merchant-update-status", ctrl.AuthMiddleware(ctrl.UpdateMerchantStatusCtrl))
 	ops.PATCH("/merchant-paychannel-update-status", ctrl.AuthMiddleware(ctrl.UpdateStatusMerchantPaychannel))
+	ops.PATCH("/update-provider-paychannel-status", ctrl.AuthMiddleware(ctrl.UpdateStatusProviderPaychannelSvc))
 	ops.PATCH("/update-fee-limit", ctrl.AuthMiddleware(ctrl.UpdateLimitOrFeeCtrl))
 	ops.PATCH("/update-fee-limit-interface-pchannel", ctrl.AuthMiddleware(ctrl.UpdateLimitFeeInterfacePchannelCtrl))
 

@@ -872,7 +872,7 @@ func (tr *TransactionsReads) GetBankDataDetailByBankCodeRepo(bankCode string) (e
 	`
 
 	err := tr.db.Get(&bankData, query, bankCode)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return bankData, err
 	}
 

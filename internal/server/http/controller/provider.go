@@ -330,3 +330,46 @@ func (ctrl *Controller) AddOperatorProviderChannelCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, addOperatorFlaggingRes)
 }
+
+func (ctrl *Controller) UpdateStatusProviderPaychannelSvc(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	var payload dto.UpdateStatusProviderPaychannelDto
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can adjust fee and limit",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.ProviderChannelId == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "provider channel id is mandatory",
+		})
+	}
+
+	updateStatusRes, err := ctrl.providerService.ActiveOrDeactivateProviderPaychannelIdSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, updateStatusRes)
+	}
+
+	return c.JSON(http.StatusOK, updateStatusRes)
+}
