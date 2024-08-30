@@ -546,3 +546,32 @@ func (ctrl *Controller) CreateMerchantReportCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, reportRes)
 }
+
+func (ctrl *Controller) GetListTransactionMerchantFlowCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+	var params dto.QueryParams
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	params.PayType = c.QueryParam("direction")
+	params.PaymentMethod = c.QueryParam("transactionType")
+	params.Status = c.QueryParam("status")
+	params.MinDate = c.QueryParam("minDate")
+	params.MaxDate = c.QueryParam("maxDate")
+	params.Search = c.QueryParam("search")
+
+	params.Username = username
+	listTransactionMerchantFlowRes, err := ctrl.transactionService.GetListTransactionMerchantFlowSvc(params)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, listTransactionMerchantFlowRes)
+	}
+
+	return c.JSON(http.StatusOK, listTransactionMerchantFlowRes)
+}

@@ -1,6 +1,7 @@
 package psql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -582,7 +583,7 @@ func (tr *TransactionsReads) GetTransactionCapitalFlowRepo(params dto.QueryParam
 	query += " ORDER BY mcf.created_at DESC"
 
 	err := tr.db.Select(&listTransactionCapital, query)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return listTransactionCapital, err
 	}
 

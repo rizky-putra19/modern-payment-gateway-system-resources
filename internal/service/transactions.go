@@ -2209,6 +2209,54 @@ func (tr *Transaction) CreateReportMerchantSvc(req dto.CreateReportMerchantReqDt
 	return resp, nil
 }
 
+func (tr *Transaction) GetListTransactionMerchantFlowSvc(params dto.QueryParams) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
+	}
+
+	user, err := tr.userRepoReads.GetUserByUsername(params.Username)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	params.MerchantId = *user.MerchantID
+	listTransactionCapital, err := tr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
+	if err != nil {
+		slog.Infof("merchant id %v list transaction capital got failed: %v", params.MerchantId, err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "Data not found",
+		}
+		return resp, err
+	}
+
+	if len(listTransactionCapital) == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusOK,
+			ResponseMessage: "Data not found",
+		}
+		return resp, nil
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve list transaction capital flow",
+		Data:            listTransactionCapital,
+	}
+
+	return resp, nil
+}
+
 func (tr *Transaction) supportExportTypeCapitalFlow(payload dto.CreateMerchantExportReqDto, fileName string) (string, error) {
 	var headers []string
 

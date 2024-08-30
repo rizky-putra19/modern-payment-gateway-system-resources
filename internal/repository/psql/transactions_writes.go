@@ -318,7 +318,7 @@ func (tr *TransactionsWrites) CreateTransactionsRepo(payload dto.CreateTransacti
 	var transactionId int
 
 	query := `
-	INSERT INTO transactions (payment_id, merchant_reference_number, provider_reference_number, merchant_paychannel_id, provider_paychannel_id, transaction_amount, bank_code, status, request_method, client_ip_address, merchant_callback_url,created_at, updated_at)
+	INSERT INTO transactions (payment_id, merchant_reference_number, provider_reference_number, merchant_paychannel_id, provider_paychannel_id, transaction_amount, bank_code, status, request_method, client_ip_address, merchant_callback_url, created_at, updated_at)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
 	RETURNING id
 	`

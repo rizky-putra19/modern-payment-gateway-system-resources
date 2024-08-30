@@ -29,6 +29,7 @@ type TransactionServiceItf interface {
 	JackDisbursementCallbackHandlingSvc(payload dto.CreateDisbursementRequestResponseData) (string, error)
 	GetReportListMerchantSvc(req dto.GetListMerchantExportFilter, username string) (dto.ResponseDto, error)
 	CreateReportMerchantSvc(req dto.CreateReportMerchantReqDto) (dto.ResponseDto, error)
+	GetListTransactionMerchantFlowSvc(params dto.QueryParams) (dto.ResponseDto, error)
 }
 
 type MerchantServiceItf interface {
