@@ -84,6 +84,7 @@ type ProviderCredentialsEntity struct {
 type ProviderRoutedChannelEntity struct {
 	Id                      int       `db:"id" json:"id"`
 	PaychannelName          string    `db:"merchant_paychannel_code" json:"paychannelName"`
+	MerchantId              string    `db:"merchant_id" json:"merchantId"`
 	MerchantName            string    `db:"merchant_name" json:"merchantName"`
 	Fee                     float64   `db:"fee" json:"fee"`
 	FeeType                 string    `db:"fee_type" json:"feeType"`

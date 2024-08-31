@@ -413,6 +413,7 @@ func (pr *ProviderReads) GetListRoutedProviderChannelRepo(providerChannelId int)
 	SELECT
 		mp.ID,
 		mp.merchant_paychannel_code,
+		m.merchant_id,
 		m.merchant_name,
 		mp.fee,
 		mp.fee_type,
