@@ -566,6 +566,8 @@ func (ctrl *Controller) GetListTransactionMerchantFlowCtrl(c echo.Context) error
 	params.MinDate = c.QueryParam("minDate")
 	params.MaxDate = c.QueryParam("maxDate")
 	params.Search = c.QueryParam("search")
+	params.Page = c.QueryParam("page")
+	params.PageSize = c.QueryParam("pageSize")
 
 	params.Username = username
 	listTransactionMerchantFlowRes, err := ctrl.transactionService.GetListTransactionMerchantFlowSvc(params)

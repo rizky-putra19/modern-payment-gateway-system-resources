@@ -664,6 +664,8 @@ func (ctrl *Controller) GetListCapitalFlowTransactionCtrl(c echo.Context) error 
 	params.MinDate = c.QueryParam("minDate")
 	params.MaxDate = c.QueryParam("maxDate")
 	params.Search = c.QueryParam("search")
+	params.Page = c.QueryParam("page")
+	params.PageSize = c.QueryParam("pageSize")
 
 	if params.MerchantId == "" {
 		return c.JSON(http.StatusBadRequest, dto.ResponseDto{

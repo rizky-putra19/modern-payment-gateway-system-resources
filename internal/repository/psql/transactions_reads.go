@@ -503,8 +503,19 @@ func (tr *TransactionsReads) GetTransactionDataForProviderAnalyticsRepo(payload 
 	return transactionDatas, nil
 }
 
-func (tr *TransactionsReads) GetTransactionCapitalFlowRepo(params dto.QueryParams) ([]entity.TransactionCapitalFlows, error) {
+func (tr *TransactionsReads) GetTransactionCapitalFlowRepo(params dto.QueryParams) ([]entity.TransactionCapitalFlows, dto.PaginatedResponse, error) {
 	var listTransactionCapital []entity.TransactionCapitalFlows
+	var pagination dto.PaginatedResponse
+	pageInt := converter.ToInt(params.Page)
+	pageSizeInt := converter.ToInt(params.PageSize)
+
+	// Set default values for pagination if not provided
+	if pageInt < 1 {
+		pageInt = 1
+	}
+	if pageSizeInt < 1 {
+		pageSizeInt = 50 // Default page size
+	}
 
 	query := `
 	SELECT
@@ -582,12 +593,104 @@ func (tr *TransactionsReads) GetTransactionCapitalFlowRepo(params dto.QueryParam
 
 	query += " ORDER BY mcf.created_at DESC"
 
-	err := tr.db.Select(&listTransactionCapital, query)
-	if err != nil && err != sql.ErrNoRows {
-		return listTransactionCapital, err
+	if pageSizeInt > 0 {
+		query += fmt.Sprintf(" LIMIT %d", pageSizeInt)
 	}
 
-	return listTransactionCapital, nil
+	if pageInt > 0 {
+		offset := (pageInt - 1) * pageSizeInt
+		query += fmt.Sprintf(" OFFSET %d", offset)
+	}
+
+	err := tr.db.Select(&listTransactionCapital, query)
+	if err != nil && err != sql.ErrNoRows {
+		return listTransactionCapital, pagination, err
+	}
+
+	countQuery := `
+	SELECT
+		COUNT (*)
+	FROM
+		merchant_capital_flows mcf
+		JOIN merchant_accounts ma ON mcf.merchant_account_id = ma.ID
+		JOIN reason_lists r ON mcf.reason_id = r.ID
+		JOIN merchants m ON ma.merchant_id = m.merchant_id
+		JOIN transactions t ON t.payment_id = mcf.payment_id
+		JOIN merchant_paychannels mp ON t.merchant_paychannel_id = mp.ID
+		JOIN merchant_payment_methods mpm ON mp.merchant_payment_method_id = mpm.ID
+		JOIN payment_methods pm ON pm.ID = mpm.payment_method_id
+	WHERE
+		mcf.reason_id IN (7, 6, 5)
+	`
+
+	var countConditions []string
+
+	if params.MinDate != "" {
+		countConditions = append(countConditions, fmt.Sprintf("mcf.created_at >= '%v'", params.MinDate))
+	}
+
+	if params.MaxDate != "" {
+		countConditions = append(countConditions, fmt.Sprintf("mcf.created_at <= '%v'", params.MaxDate))
+	}
+
+	if params.Status != "" {
+		sliceStatus := helper.SplitString(params.Status)
+		var statusConditions []string
+		for _, status := range sliceStatus {
+			statusConditions = append(statusConditions, fmt.Sprintf("mcf.status = '%v'", status))
+		}
+		countConditions = append(countConditions, "("+strings.Join(statusConditions, " OR ")+")")
+	}
+
+	if params.Search != "" {
+		searchStr := fmt.Sprintf("%%%v%%", params.Search)
+		countConditions = append(countConditions, fmt.Sprintf("(mcf.payment_id LIKE '%v')", searchStr))
+	}
+
+	if params.MerchantId != "" {
+		countConditions = append(countConditions, fmt.Sprintf("ma.merchant_id = '%v'", params.MerchantId))
+	}
+
+	if params.PayType != "" {
+		slicePayType := helper.SplitString(params.PayType)
+		var payTypeConditions []string
+		for _, payType := range slicePayType {
+			payTypeConditions = append(payTypeConditions, fmt.Sprintf("pm.pay_type = '%v'", payType))
+		}
+		countConditions = append(countConditions, "("+strings.Join(payTypeConditions, " OR ")+")")
+	}
+
+	if params.PaymentMethod != "" {
+		slicePaymentMethod := helper.SplitString(params.PaymentMethod)
+		var paymentMethodConditions []string
+		for _, paymentMethod := range slicePaymentMethod {
+			paymentMethodConditions = append(paymentMethodConditions, fmt.Sprintf("pm.name = '%v'", paymentMethod))
+		}
+		countConditions = append(countConditions, "("+strings.Join(paymentMethodConditions, " OR ")+")")
+	}
+
+	if len(countConditions) > 0 {
+		countQuery += " AND " + strings.Join(countConditions, " AND ")
+	}
+
+	var totalItems int
+	err = tr.db.Get(&totalItems, countQuery)
+	if err != nil {
+		return nil, pagination, err
+	}
+
+	// Calculate total pages
+	totalPages := (totalItems + pageSizeInt - 1) / pageSizeInt
+	pagination = dto.PaginatedResponse{
+		CurrentPage: pageInt,
+		PageSize:    pageSizeInt,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		HasNextPage: pageInt < totalPages,
+		HasPrevPage: pageInt > 1,
+	}
+
+	return listTransactionCapital, pagination, nil
 }
 
 func (tr *TransactionsReads) GetTransactionListByMerchantPaychannelRepo(payload dto.GetMerchantAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error) {

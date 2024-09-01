@@ -2230,7 +2230,7 @@ func (tr *Transaction) GetListTransactionMerchantFlowSvc(params dto.QueryParams)
 	}
 
 	params.MerchantId = *user.MerchantID
-	listTransactionCapital, err := tr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
+	listTransactionCapital, pagination, err := tr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
 	if err != nil {
 		slog.Infof("merchant id %v list transaction capital got failed: %v", params.MerchantId, err.Error())
 		resp = dto.ResponseDto{
@@ -2252,6 +2252,7 @@ func (tr *Transaction) GetListTransactionMerchantFlowSvc(params dto.QueryParams)
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: "success retrieve list transaction capital flow",
 		Data:            listTransactionCapital,
+		Pagination:      pagination,
 	}
 
 	return resp, nil

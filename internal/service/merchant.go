@@ -1816,7 +1816,7 @@ func (mr *Merchant) GetListCapitalFlowTransactionSvc(params dto.QueryParams) (dt
 		params.MaxDate = helper.GenerateTime(24)
 	}
 
-	listTransactionCapital, err := mr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
+	listTransactionCapital, pagination, err := mr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
 	if err != nil {
 		slog.Infof("merchant id %v list transaction capital got failed: %v", params.MerchantId, err.Error())
 		res = dto.ResponseDto{
@@ -1838,6 +1838,7 @@ func (mr *Merchant) GetListCapitalFlowTransactionSvc(params dto.QueryParams) (dt
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: "success retrieve list transaction capital flow",
 		Data:            listTransactionCapital,
+		Pagination:      pagination,
 	}
 
 	return res, nil

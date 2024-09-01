@@ -13,7 +13,7 @@ type TransactionsReadsRepositoryItf interface {
 	GetStatusChangeLogData(paymentId string) ([]entity.TransactionStatusLogs, error)
 	GetCapitalFlowsWitPaymentId(paymentId string) ([]entity.CapitalFlows, error)
 	GetTransactionAnalyticsRepo(params dto.GetMerchantAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
-	GetTransactionCapitalFlowRepo(params dto.QueryParams) ([]entity.TransactionCapitalFlows, error)
+	GetTransactionCapitalFlowRepo(params dto.QueryParams) ([]entity.TransactionCapitalFlows, dto.PaginatedResponse, error)
 	GetTransactionListByMerchantPaychannelRepo(payload dto.GetMerchantAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
 	GetTransactionDataForProviderAnalyticsRepo(payload dto.GetProviderAnalyticsDtoReq) ([]entity.PaymentDetailMerchantProvider, error)
 	GetListMerchantExportRepo(params dto.GetListMerchantExportFilter) ([]entity.ReportStoragesEntity, error)
