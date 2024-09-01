@@ -107,6 +107,7 @@ type ProviderReadsRepositoryItf interface {
 	GetBankListProviderChannelRepo(providerChannelId int) ([]entity.BankListDto, error)
 	GetListRoutedProviderChannelRepo(providerChannelId int) ([]entity.ProviderRoutedChannelEntity, error)
 	GetProviderBankListChannelRepo(providerChannelId int, bankListId int) (entity.ProviderPaychannelBankListEntity, error)
+	GetProviderInterfaceWithFilterRepo(params dto.QueryParams) ([]entity.ProviderInterfacesEntity, error)
 }
 
 type ProviderWritesRepositoryItf interface {

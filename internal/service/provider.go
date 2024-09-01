@@ -14,6 +14,7 @@ import (
 	"github.com/hypay-id/backend-dashboard-hypay/internal/entity"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/converter"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/helper"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/slog"
 )
 
 type Provider struct {
@@ -494,6 +495,29 @@ func (pr *Provider) ActiveOrDeactivateProviderPaychannelIdSvc(payload dto.Update
 	resp = dto.ResponseDto{
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: fmt.Sprintf("success update status for provider paychannel id %v", payload.ProviderChannelId),
+	}
+
+	return resp, nil
+}
+
+func (pr *Provider) GetListInterfaceProviderSvc(params dto.QueryParams) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	// get list interface
+	listInterface, err := pr.providerRepoReads.GetProviderInterfaceWithFilterRepo(params)
+	if err != nil {
+		slog.Errorw("listInterface failed", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "failed to get interface list",
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success get list interface code",
+		Data:            listInterface,
 	}
 
 	return resp, nil

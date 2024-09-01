@@ -191,6 +191,83 @@ func (pr *ProviderReads) GetProviderInterfacesRepoById(id int) ([]entity.Provide
 	return listData, nil
 }
 
+func (pr *ProviderReads) GetProviderInterfaceWithFilterRepo(params dto.QueryParams) ([]entity.ProviderInterfacesEntity, error) {
+	var listData []entity.ProviderInterfacesEntity
+	var conditions []string
+
+	// Base query
+	query := `
+	SELECT
+		ppm.ID,
+		p.currency,
+		p.provider_name,
+		pm.pay_type,
+		pm.name,
+		COUNT(ppbl.id) AS payment_operators
+	FROM
+		providers p
+		JOIN provider_payment_methods ppm ON p.id = ppm.provider_id
+		JOIN payment_methods pm ON ppm.payment_method_id = pm.id
+		LEFT JOIN provider_payment_method_bank_lists ppbl ON ppm.id = ppbl.provider_payment_method_id
+	`
+
+	// Add filters if provided using conditions
+	if params.ProviderName != "" {
+		providerNames := helper.SplitString(params.ProviderName)
+		quotedProviderNames := make([]string, len(providerNames))
+		for i, name := range providerNames {
+			quotedProviderNames[i] = fmt.Sprintf("'%v'", name)
+		}
+		conditions = append(conditions, fmt.Sprintf("p.provider_name IN (%v)", strings.Join(quotedProviderNames, ", ")))
+	}
+
+	if params.PaymentMethod != "" {
+		paymentMethods := helper.SplitString(params.PaymentMethod)
+		quotedPaymentMethod := make([]string, len(paymentMethods))
+		for i, paymentMethod := range paymentMethods {
+			quotedPaymentMethod[i] = fmt.Sprintf("'%v'", paymentMethod)
+		}
+		conditions = append(conditions, fmt.Sprintf("pm.name IN (%v)", strings.Join(quotedPaymentMethod, ", ")))
+	}
+
+	if params.PayType != "" {
+		payTypes := helper.SplitString(params.PayType)
+		quotedPayType := make([]string, len(payTypes))
+		for i, payType := range payTypes {
+			quotedPayType[i] = fmt.Sprintf("'%v'", payType)
+		}
+		conditions = append(conditions, fmt.Sprintf("pm.pay_type IN (%v)", strings.Join(quotedPayType, ", ")))
+	}
+
+	// Combine conditions
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// Group by clause
+	query += `
+	GROUP BY
+		ppm.ID,
+		p.currency,
+		p.provider_name,
+		pm.pay_type,
+		pm.name
+	`
+
+	err := pr.db.Select(&listData, query)
+	if err != nil {
+		return listData, err
+	}
+
+	if len(listData) > 0 {
+		for i := range listData {
+			listData[i].InterfaceCode = strings.ToUpper(listData[i].Provider) + "-" + constant.TransformPaymentMethodNameIntoCode[listData[i].PaymentMethod]
+		}
+	}
+
+	return listData, nil
+}
+
 func (pr *ProviderReads) GetListProviderPaychannelById(id int) ([]entity.InterfacePaychannelEntity, error) {
 	var listPaychannel []entity.InterfacePaychannelEntity
 
