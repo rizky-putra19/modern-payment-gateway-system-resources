@@ -390,7 +390,7 @@ func (ctrl *Controller) GetListProviderInterfaceCtrl(c echo.Context) error {
 	if roleName != constant.RoleNameAdmin {
 		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
 			ResponseCode:    http.StatusBadGateway,
-			ResponseMessage: "only admin can adjust fee and limit",
+			ResponseMessage: "only admin can access this endpoint",
 		})
 	}
 
@@ -404,4 +404,31 @@ func (ctrl *Controller) GetListProviderInterfaceCtrl(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, interfaceList)
+}
+
+func (ctrl *Controller) GetListPaymentOperatorCreateProviderChannelCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can access this endpoint",
+		})
+	}
+
+	operatorList, err := ctrl.providerService.GetListPaymentOperatorCreateChannelProviderSvc(c.QueryParam("providerInterfaceId"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, operatorList)
+	}
+
+	return c.JSON(http.StatusOK, operatorList)
 }

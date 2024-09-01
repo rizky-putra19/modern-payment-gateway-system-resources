@@ -458,6 +458,31 @@ func (pr *ProviderReads) GetBankListProviderMethodRepo(providerChannelId int) ([
 	return bankList, nil
 }
 
+func (pr *ProviderReads) GetBankListProviderInterfaceRepo(providerPaymentMethodId int) ([]entity.BankListDto, error) {
+	var bankList []entity.BankListDto
+
+	query := `
+		SELECT
+			bl.ID,
+			bl.bank_name,
+			bl.bank_code,
+			bl.created_at
+		FROM
+			provider_payment_methods ppm
+			JOIN provider_payment_method_bank_lists ppmbl ON ppm.ID = ppmbl.provider_payment_method_id
+			JOIN bank_lists bl ON ppmbl.bank_list_id = bl.ID
+		WHERE
+			ppm.ID = $1;
+	`
+
+	err := pr.db.Select(&bankList, query, providerPaymentMethodId)
+	if err != nil && err != sql.ErrNoRows {
+		return bankList, err
+	}
+
+	return bankList, nil
+}
+
 func (pr *ProviderReads) GetBankListProviderChannelRepo(providerChannelId int) ([]entity.BankListDto, error) {
 	var bankList []entity.BankListDto
 

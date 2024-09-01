@@ -523,6 +523,38 @@ func (pr *Provider) GetListInterfaceProviderSvc(params dto.QueryParams) (dto.Res
 	return resp, nil
 }
 
+func (pr *Provider) GetListPaymentOperatorCreateChannelProviderSvc(providerPaymentMethodId string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	interfaceIdInt := converter.ToInt(providerPaymentMethodId)
+
+	// operator list
+	operatorList, err := pr.providerRepoReads.GetBankListProviderInterfaceRepo(interfaceIdInt)
+	if err != nil {
+		slog.Errorw("failed get operator list", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "failed get operator list",
+		}
+		return resp, err
+	}
+
+	if len(operatorList) == 0 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "this provider interface doesn't have payment operator",
+		}
+		return resp, errors.New("data not found")
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Success get operator list",
+		Data:            operatorList,
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int
