@@ -83,7 +83,9 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	ops.POST("/generate-api-key-merchant", ctrl.AuthMiddleware(ctrl.GenerateSecretKeyCtrl))
 	ops.POST("/invite-user-merchant", ctrl.AuthMiddleware(ctrl.InviteUserMerchantCtrl))
 	ops.POST("/add-operator-channel", ctrl.AuthMiddleware(ctrl.AddOperatorProviderChannelCtrl))
+	ops.POST("/create-provider-paychannel", ctrl.AuthMiddleware(ctrl.CreateProviderPaychannelCtrl))
 
+	// merchant endpoint
 	mrn := e.Group("/merchant-dashboard/v1")
 
 	// get method

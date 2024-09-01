@@ -160,3 +160,15 @@ type AddOperatorProviderChannelPayload struct {
 type UpdateStatusProviderPaychannelDto struct {
 	ProviderChannelId int `json:"providerChannelId"`
 }
+
+type CreateProviderChannelDto struct {
+	ProviderInterfaceId int                                 `json:"providerInterfaceId"`
+	PaychannelName      string                              `json:"paychannelName"`
+	InterfaceSetting    *string                             `json:"interfaceSetting"`
+	MinAmount           *float64                            `json:"minAmount"`
+	MaxAmount           *float64                            `json:"maxAmount"`
+	DailyLimit          *float64                            `json:"dailyLimit"`
+	Fee                 *float64                            `json:"fee"`
+	FeeType             *string                             `json:"feeType"`
+	BankOperator        []AddOperatorProviderChannelPayload `json:"paymentOperator"`
+}

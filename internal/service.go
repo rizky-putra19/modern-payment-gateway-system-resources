@@ -95,4 +95,5 @@ type ProviderServiceItf interface {
 	ActiveOrDeactivateProviderPaychannelIdSvc(payload dto.UpdateStatusProviderPaychannelDto) (dto.ResponseDto, error)
 	GetListInterfaceProviderSvc(params dto.QueryParams) (dto.ResponseDto, error)
 	GetListPaymentOperatorCreateChannelProviderSvc(providerPaymentMethodId string) (dto.ResponseDto, error)
+	CreateProviderChannelSvc(payload dto.CreateProviderChannelDto) (dto.ResponseDto, error)
 }

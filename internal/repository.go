@@ -117,4 +117,5 @@ type ProviderWritesRepositoryItf interface {
 	AddOperatorProviderChannelRepo(providerChannelId int, bankListId int) (int, error)
 	DeleteOperatorProviderChannelRepo(providerChannelId int, bankListId int) error
 	UpdateStatusProviderPaychannelRepo(id int, status string) error
+	CreateProviderPaychannelRepo(payload dto.CreateProviderChannelDto) (int, error)
 }

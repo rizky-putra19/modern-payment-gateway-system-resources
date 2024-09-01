@@ -432,3 +432,46 @@ func (ctrl *Controller) GetListPaymentOperatorCreateProviderChannelCtrl(c echo.C
 
 	return c.JSON(http.StatusOK, operatorList)
 }
+
+func (ctrl *Controller) CreateProviderPaychannelCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	var payload dto.CreateProviderChannelDto
+
+	// blocked merchant user for further access
+	if userType != constant.UserOperation {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only operations can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can access this endpoint",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.ProviderInterfaceId == 0 || payload.PaychannelName == "" {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "provider interface id mandatory",
+		})
+	}
+
+	createProviderChannelRes, err := ctrl.providerService.CreateProviderChannelSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, createProviderChannelRes)
+	}
+
+	return c.JSON(http.StatusOK, createProviderChannelRes)
+}

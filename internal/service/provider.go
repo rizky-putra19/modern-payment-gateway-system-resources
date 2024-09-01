@@ -555,6 +555,91 @@ func (pr *Provider) GetListPaymentOperatorCreateChannelProviderSvc(providerPayme
 	return resp, nil
 }
 
+func (pr *Provider) CreateProviderChannelSvc(payload dto.CreateProviderChannelDto) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	// Check and provide default value if nil
+	if payload.InterfaceSetting == nil {
+		defaultSetting := "MAIN"
+		payload.InterfaceSetting = &defaultSetting
+	}
+
+	if payload.MinAmount == nil {
+		defaultMinAmount := 0.0
+		payload.MinAmount = &defaultMinAmount
+	}
+
+	if payload.MaxAmount == nil {
+		defaultMaxAmount := 0.0
+		payload.MaxAmount = &defaultMaxAmount
+	}
+
+	if payload.DailyLimit == nil {
+		defaultDailyLimit := 0.0
+		payload.DailyLimit = &defaultDailyLimit
+	}
+
+	if payload.Fee == nil {
+		defaultFee := 0.0
+		payload.Fee = &defaultFee
+	}
+
+	if payload.FeeType == nil {
+		defaultFeeType := constant.FeeTypeFixedFee
+		payload.FeeType = &defaultFeeType
+	}
+
+	// create provider paychannel
+	paychannelId, err := pr.providerRepoWrites.CreateProviderPaychannelRepo(payload)
+	if err != nil {
+		slog.Errorw("create paychannel failed", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "failed create paychannel",
+		}
+		return resp, err
+	}
+
+	if len(payload.BankOperator) > 0 {
+		for _, bank := range payload.BankOperator {
+			bankDetailData, err := pr.transactionRepoReads.GetBankDataDetailByBankCodeRepo(bank.BankCode)
+			if err != nil {
+				slog.Errorw("bankDetailData", "stack_trace", err.Error())
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: constant.GeneralErrMsg,
+				}
+				return resp, err
+			}
+
+			if bankDetailData.Id == 0 {
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: "data not found, maybe wrong bank code",
+				}
+				return resp, errors.New("data not found, maybe wrong bank code")
+			}
+
+			_, err = pr.providerRepoWrites.AddOperatorProviderChannelRepo(paychannelId, bankDetailData.Id)
+			if err != nil {
+				slog.Errorw("AddOperatorProviderChannelRepo", "stack_trace", err.Error())
+				resp = dto.ResponseDto{
+					ResponseCode:    http.StatusUnprocessableEntity,
+					ResponseMessage: constant.GeneralErrMsg,
+				}
+				return resp, err
+			}
+		}
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: fmt.Sprintf("success create provider paychannel with id %v", paychannelId),
+	}
+
+	return resp, nil
+}
+
 func supportProviderAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsProviderRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

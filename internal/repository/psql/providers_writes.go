@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hypay-id/backend-dashboard-hypay/internal/constant"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/jmoiron/sqlx"
 )
@@ -135,4 +136,56 @@ func (pw *ProviderWrites) UpdateStatusProviderPaychannelRepo(id int, status stri
 		return err
 	}
 	return nil
+}
+
+func (pw *ProviderWrites) CreateProviderPaychannelRepo(payload dto.CreateProviderChannelDto) (int, error) {
+	var id int
+
+	query := `
+	INSERT INTO provider_paychannels (
+		provider_payment_method_id, 
+		paychannel_name, 
+		fee, 
+		fee_type, 
+		status, 
+		min_transaction, 
+		max_transaction,
+		max_daily_transaction,
+		interface_setting,
+		created_at,
+		updated_at
+	)
+	VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6,
+		$7,
+		$8,
+		$9,
+		CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta',
+		CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'
+	)
+	RETURNING id
+	`
+
+	row := pw.db.QueryRow(
+		query,
+		payload.ProviderInterfaceId,
+		payload.PaychannelName,
+		payload.Fee,
+		payload.FeeType,
+		constant.StatusInactive,
+		payload.MinAmount,
+		payload.MaxAmount,
+		payload.DailyLimit,
+		payload.InterfaceSetting,
+	)
+	err := row.Scan(&id)
+	if err != nil && id == 0 {
+		return id, err
+	}
+	return id, nil
 }
