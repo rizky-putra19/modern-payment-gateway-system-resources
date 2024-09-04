@@ -91,6 +91,7 @@ type UserReadsRepositoryItf interface {
 
 type UserWritesRepositoryItf interface {
 	CreateUsersMerchantRepo(payload dto.InviteMerchantUserDto, credentials dto.EmailDataHtmlDto) (int, error)
+	UpdatePassOrPinRepo(passHash string, pinHash string, username string) error
 }
 
 type ProviderReadsRepositoryItf interface {

@@ -8,6 +8,12 @@ type InviteMerchantUserDto struct {
 
 type EmailDataHtmlDto struct {
 	Username string
-	Password string
-	Pin      string
+	Password string `json:"password"`
+	Pin      string `json:"pin"`
+}
+
+type UpdatePassOrPinDto struct {
+	Username string
+	Password *string `json:"password"`
+	Pin      *string `json:"pin"`
 }

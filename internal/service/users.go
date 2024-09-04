@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/hypay-id/backend-dashboard-hypay/config"
 	"github.com/hypay-id/backend-dashboard-hypay/internal"
+	"github.com/hypay-id/backend-dashboard-hypay/internal/constant"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/entity"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/pkg/helper"
@@ -194,6 +195,107 @@ func (u *User) InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.Res
 	resp = dto.ResponseDto{
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: fmt.Sprintf("Success create user %v with id: %v", payload.Email, idUser),
+	}
+
+	return resp, nil
+}
+
+func (u *User) GetUserInformationsSvc(username string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	user, err := u.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		slog.Errorw("failed get user data", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            user,
+	}
+
+	return resp, nil
+}
+
+func (u *User) UpdatePasswordOrPinSvc(payload dto.UpdatePassOrPinDto) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	var passwordHash string
+	var pinHash string
+
+	user, err := u.userRepoReads.GetUserByUsername(payload.Username)
+	if err != nil {
+		slog.Errorw("failed get user", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "user not found",
+		}
+		return resp, err
+	}
+
+	// validate password
+	if payload.Password != nil {
+		if !helper.IsValidPassword(*payload.Password) {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: "password have to 8 character, at least one special character, and one uppercase letter",
+			}
+			return resp, errors.New("invalid password")
+		}
+
+		passwordHash, err = helper.HashString([]byte(*payload.Password))
+		if err != nil {
+			slog.Errorw("failed get user", "stack_trace", err.Error())
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: "user not found",
+			}
+			return resp, err
+		}
+	} else {
+		passwordHash = user.Password
+	}
+
+	if payload.Pin != nil {
+		if !helper.IsValidPIN(*payload.Pin) {
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: "pin only 6 numeric allowed",
+			}
+			return resp, errors.New("invalid pin")
+		}
+
+		pinHash, err = helper.HashString([]byte(*payload.Pin))
+		if err != nil {
+			slog.Errorw("failed get user", "stack_trace", err.Error())
+			resp = dto.ResponseDto{
+				ResponseCode:    http.StatusUnprocessableEntity,
+				ResponseMessage: "user not found",
+			}
+			return resp, err
+		}
+	} else {
+		pinHash = user.Pin
+	}
+
+	// update pin or password
+	err = u.userRepoWrites.UpdatePassOrPinRepo(passwordHash, pinHash, payload.Username)
+	if err != nil {
+		slog.Errorw("failed get user", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: fmt.Sprintf("success updated for username %v", payload.Username),
 	}
 
 	return resp, nil

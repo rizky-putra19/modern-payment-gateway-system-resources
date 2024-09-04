@@ -80,6 +80,8 @@ type UserServiceItf interface {
 	GetListRolesSvc() (dto.ResponseDto, error)
 	GetListUserMerchantSvc(merchantId string) (dto.ResponseDto, error)
 	InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error)
+	GetUserInformationsSvc(username string) (dto.ResponseDto, error)
+	UpdatePasswordOrPinSvc(payload dto.UpdatePassOrPinDto) (dto.ResponseDto, error)
 }
 
 type ProviderServiceItf interface {

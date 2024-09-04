@@ -33,3 +33,20 @@ func (uw *UsersWrites) CreateUsersMerchantRepo(payload dto.InviteMerchantUserDto
 
 	return userId, nil
 }
+
+func (uw *UsersWrites) UpdatePassOrPinRepo(passHash string, pinHash string, username string) error {
+	query := `
+	UPDATE users
+	SET
+		password = $1,
+		pin = $2,
+		updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'
+	WHERE username = $3;
+	`
+
+	_, err := uw.db.Exec(query, passHash, pinHash, username)
+	if err != nil {
+		return err
+	}
+	return nil
+}

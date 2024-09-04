@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/hypay-id/backend-dashboard-hypay/internal/dto"
 	"github.com/hypay-id/backend-dashboard-hypay/internal/entity"
@@ -316,4 +317,41 @@ func CheckingFirstAndLastStr(str string) (first string, last string, err error) 
 	}
 
 	return "", "", errors.New("there is no string")
+}
+
+func IsValidPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	hasSpecial := false
+	hasUpper := false
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+
+	return hasSpecial && hasUpper
+}
+
+func IsValidPIN(pin string) bool {
+	// Check if the length is exactly 6
+	if len(pin) != 6 {
+		return false
+	}
+
+	// Check if all characters are digits
+	for _, char := range pin {
+		if !unicode.IsDigit(char) {
+			return false
+		}
+	}
+
+	// If it passes both checks, it's valid
+	return true
 }

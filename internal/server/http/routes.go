@@ -101,6 +101,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.GET("/get-report-list", ctrl.AuthMiddleware(ctrl.GetReportListCtrl))
 	mrn.GET("/get-list-filter-report", ctrl.AuthMiddleware(ctrl.GetListFilterMerchantReportCtrl))
 	mrn.GET("/get-list-transaction-merchant-flow", ctrl.AuthMiddleware(ctrl.GetListTransactionMerchantFlowCtrl))
+	mrn.GET("/get-user-information", ctrl.AuthMiddleware(ctrl.GetUserInformationCtrl))
 
 	// post method
 	mrn.POST("/resend-callback", ctrl.AuthMiddleware(ctrl.ResendCallbackMerchantCtrl))
@@ -108,4 +109,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.POST("/count-disbursement", ctrl.AuthMiddleware(ctrl.CountDisbursementTotalAmountCtrl))
 	mrn.POST("/provider-jack/disbursement", ctrl.JackDisbursementCallbackCtrl)
 	mrn.POST("/create-report", ctrl.AuthMiddleware(ctrl.CreateMerchantReportCtrl))
+
+	// patch method
+	mrn.PATCH("/update-pin-password", ctrl.AuthMiddleware(ctrl.UpdatePinPasswordCtrl))
 }

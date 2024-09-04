@@ -118,3 +118,60 @@ func (ctrl *Controller) InviteUserMerchantCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, inviteUserResp)
 }
+
+func (ctrl *Controller) GetUserInformationCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	userInformationRes, err := ctrl.userService.GetUserInformationsSvc(username)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, userInformationRes)
+	}
+
+	return c.JSON(http.StatusOK, userInformationRes)
+}
+
+func (ctrl *Controller) UpdatePinPasswordCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+	var payload dto.UpdatePassOrPinDto
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.Password == nil && payload.Pin == nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "need to input password or pin",
+		})
+	}
+
+	payload.Username = username
+	updateRes, err := ctrl.userService.UpdatePasswordOrPinSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, updateRes)
+	}
+
+	return c.JSON(http.StatusOK, updateRes)
+}
