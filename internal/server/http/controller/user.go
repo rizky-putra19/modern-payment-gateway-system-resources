@@ -175,3 +175,42 @@ func (ctrl *Controller) UpdatePinPasswordCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, updateRes)
 }
+
+func (ctrl *Controller) GetMerchantRolesCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	rolesList, err := ctrl.userService.GetListRolesSvc()
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, rolesList)
+	}
+
+	return c.JSON(http.StatusOK, rolesList)
+}
+
+func (ctrl *Controller) GetMerchantListUserCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	listUser, err := ctrl.userService.GetListMerchantUserSvc(username)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, listUser)
+	}
+
+	return c.JSON(http.StatusOK, listUser)
+}

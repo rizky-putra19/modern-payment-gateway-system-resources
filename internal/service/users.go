@@ -149,6 +149,46 @@ func (u *User) GetListUserMerchantSvc(merchantId string) (dto.ResponseDto, error
 	return resp, nil
 }
 
+func (u *User) GetListMerchantUserSvc(username string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	user, err := u.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		slog.Errorw("failed get user", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	listUsers, err := u.userRepoReads.GetListUserByMerchantIdRepo(*user.MerchantID)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	if len(listUsers) < 1 {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusOK,
+			ResponseMessage: "data not found",
+			Data:            listUsers,
+		}
+		return resp, nil
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success retrieve data",
+		Data:            listUsers,
+	}
+
+	return resp, nil
+}
+
 func (u *User) InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 	cfgAppMail := u.cfg.AppPassMail

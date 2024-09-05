@@ -102,6 +102,8 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.GET("/get-list-filter-report", ctrl.AuthMiddleware(ctrl.GetListFilterMerchantReportCtrl))
 	mrn.GET("/get-list-transaction-merchant-flow", ctrl.AuthMiddleware(ctrl.GetListTransactionMerchantFlowCtrl))
 	mrn.GET("/get-user-information", ctrl.AuthMiddleware(ctrl.GetUserInformationCtrl))
+	mrn.GET("/get-merchant-roles", ctrl.AuthMiddleware(ctrl.GetMerchantRolesCtrl))
+	mrn.GET("/get-merchant-list-user", ctrl.AuthMiddleware(ctrl.GetMerchantListUserCtrl))
 
 	// post method
 	mrn.POST("/resend-callback", ctrl.AuthMiddleware(ctrl.ResendCallbackMerchantCtrl))
