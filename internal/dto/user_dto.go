@@ -4,6 +4,7 @@ type InviteMerchantUserDto struct {
 	Email      string `json:"email"`
 	RolesId    int    `json:"rolesId"`
 	MerchantId string `json:"merchantId"`
+	Username   string
 }
 
 type EmailDataHtmlDto struct {

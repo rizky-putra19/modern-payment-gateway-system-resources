@@ -72,6 +72,7 @@ type MerchantServiceItf interface {
 	GetListOtherTransactionsSvc(params dto.QueryParamsManualPayment) (dto.ResponseDto, error)
 	GetListCallbackMerchantSvc(params dto.QueryParamsMerchantCallback) (dto.ResponseDto, error)
 	GetMerchantAccountBalanceSvc(username string) (dto.ResponseDto, error)
+	GetInformationMerchantSvc(username string) (dto.ResponseDto, error)
 }
 
 type UserServiceItf interface {
@@ -81,6 +82,7 @@ type UserServiceItf interface {
 	GetListUserMerchantSvc(merchantId string) (dto.ResponseDto, error)
 	GetListMerchantUserSvc(username string) (dto.ResponseDto, error)
 	InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error)
+	InviteMerchantUserSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error)
 	GetUserInformationsSvc(username string) (dto.ResponseDto, error)
 	UpdatePasswordOrPinSvc(payload dto.UpdatePassOrPinDto) (dto.ResponseDto, error)
 }

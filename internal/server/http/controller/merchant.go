@@ -1592,3 +1592,23 @@ func (ctrl *Controller) GetReportListCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, reportList)
 }
+
+func (ctrl *Controller) GetInformationMerchantCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	username := c.Get("username").(string)
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	merchantInformation, err := ctrl.merchantService.GetInformationMerchantSvc(username)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, merchantInformation)
+	}
+
+	return c.JSON(http.StatusOK, merchantInformation)
+}

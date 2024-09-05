@@ -55,6 +55,14 @@ func (u *User) Login(payload dto.LoginPayload) (dto.ResponseDto, error) {
 		return resp, errors.New("user not found")
 	}
 
+	if user.UserStatus == constant.StatusInactive {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: "user is not active",
+		}
+		return resp, errors.New("user not active")
+	}
+
 	if !comparePasswords(user.Password, []byte(payload.Password)) {
 		resp = dto.ResponseDto{
 			ResponseCode:    http.StatusBadRequest,
@@ -199,6 +207,68 @@ func (u *User) InviteUserMerchantSvc(payload dto.InviteMerchantUserDto) (dto.Res
 	passHash, _ := helper.HashString([]byte(password))
 	pinHash, _ := helper.HashString([]byte(pin))
 
+	credentialForRepo := dto.EmailDataHtmlDto{
+		Password: passHash,
+		Pin:      pinHash,
+		Username: payload.Email,
+	}
+
+	// create user
+	idUser, err := u.userRepoWrites.CreateUsersMerchantRepo(payload, credentialForRepo)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	// credential for send email
+	credentialSendMail := dto.EmailDataHtmlDto{
+		Password: password,
+		Pin:      pin,
+		Username: username,
+	}
+
+	// send email
+	err = helper.SendEmailInviteUser(credentialSendMail, payload.Email, cfgAppMail)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: fmt.Sprintf("Success create user %v with id: %v", payload.Email, idUser),
+	}
+
+	return resp, nil
+}
+
+func (u *User) InviteMerchantUserSvc(payload dto.InviteMerchantUserDto) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	cfgAppMail := u.cfg.AppPassMail
+	username := payload.Email
+	password := helper.GenerateRandomString(8)
+	pin := helper.GenerateRandomPinNumericString(6)
+
+	passHash, _ := helper.HashString([]byte(password))
+	pinHash, _ := helper.HashString([]byte(pin))
+
+	user, err := u.userRepoReads.GetUserByUsername(payload.Username)
+	if err != nil {
+		slog.Errorw("failed get user data", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	payload.MerchantId = *user.MerchantID
 	credentialForRepo := dto.EmailDataHtmlDto{
 		Password: passHash,
 		Pin:      pinHash,

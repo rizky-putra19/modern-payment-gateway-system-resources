@@ -214,3 +214,56 @@ func (ctrl *Controller) GetMerchantListUserCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, listUser)
 }
+
+func (ctrl *Controller) InviteMerchantUserCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	username := c.Get("username").(string)
+	var payload dto.InviteMerchantUserDto
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin can invite user",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.Email == "" ||
+		payload.RolesId == 0 {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "email, and roles id is mandatory",
+		})
+	}
+
+	if !helper.IsValidEmail(payload.Email) {
+		return c.JSON(http.StatusUnprocessableEntity, dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: fmt.Sprintf("%v it's not valid email", payload.Email),
+		})
+	}
+
+	payload.Username = username
+	inviteUserResp, err := ctrl.userService.InviteMerchantUserSvc(payload)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, inviteUserResp)
+	}
+
+	return c.JSON(http.StatusOK, inviteUserResp)
+}

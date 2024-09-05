@@ -2548,6 +2548,38 @@ func (mr *Merchant) GetMerchantAccountBalanceSvc(username string) (dto.ResponseD
 	return resp, nil
 }
 
+func (mr *Merchant) GetInformationMerchantSvc(username string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	user, err := mr.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		slog.Errorw("failed get user data", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	merchantData, err := mr.merchantRepoReads.GetMerchantDataByMerchantId(*user.MerchantID)
+	if err != nil {
+		slog.Errorw("failed get merchant data", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Success retrieve data",
+		Data:            merchantData,
+	}
+
+	return resp, nil
+}
+
 func supportMerchantAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsMerchantRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

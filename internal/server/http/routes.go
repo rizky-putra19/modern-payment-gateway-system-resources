@@ -104,6 +104,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.GET("/get-user-information", ctrl.AuthMiddleware(ctrl.GetUserInformationCtrl))
 	mrn.GET("/get-merchant-roles", ctrl.AuthMiddleware(ctrl.GetMerchantRolesCtrl))
 	mrn.GET("/get-merchant-list-user", ctrl.AuthMiddleware(ctrl.GetMerchantListUserCtrl))
+	mrn.GET("/get-information-merchant", ctrl.AuthMiddleware(ctrl.GetInformationMerchantCtrl))
 
 	// post method
 	mrn.POST("/resend-callback", ctrl.AuthMiddleware(ctrl.ResendCallbackMerchantCtrl))
@@ -111,6 +112,7 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.POST("/count-disbursement", ctrl.AuthMiddleware(ctrl.CountDisbursementTotalAmountCtrl))
 	mrn.POST("/provider-jack/disbursement", ctrl.JackDisbursementCallbackCtrl)
 	mrn.POST("/create-report", ctrl.AuthMiddleware(ctrl.CreateMerchantReportCtrl))
+	mrn.POST("/invite-merchant-user", ctrl.AuthMiddleware(ctrl.InviteMerchantUserCtrl))
 
 	// patch method
 	mrn.PATCH("/update-pin-password", ctrl.AuthMiddleware(ctrl.UpdatePinPasswordCtrl))
