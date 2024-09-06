@@ -1612,3 +1612,84 @@ func (ctrl *Controller) GetInformationMerchantCtrl(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, merchantInformation)
 }
+
+func (ctrl *Controller) DisplayMerchantKeyCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	username := c.Get("username").(string)
+	var payload dto.BalanceTrfReqPayload
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin display secret key",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	if payload.Pin == "" {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "pin is mandatory",
+		})
+	}
+
+	displayKey, err := ctrl.merchantService.DisplayMerchantKeySvc(username, payload.Pin)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, displayKey)
+	}
+
+	return c.JSON(http.StatusOK, displayKey)
+}
+
+func (ctrl *Controller) GenerateMerchantKeyCtrl(c echo.Context) error {
+	userType := c.Get("userType").(string)
+	roleName := c.Get("roleName").(string)
+	username := c.Get("username").(string)
+	var payload dto.BalanceTrfReqPayload
+
+	// blocked merchant user for further access
+	if userType != constant.UserMerchant {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only merchant can access this endpoint",
+		})
+	}
+
+	if roleName != constant.RoleNameAdmin {
+		return c.JSON(http.StatusBadGateway, dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: "only admin display secret key",
+		})
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "invalid request payload",
+		})
+	}
+
+	generateRes, err := ctrl.merchantService.GenerateMerchantKeySvc(payload.Pin, username)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, generateRes)
+	}
+
+	return c.JSON(http.StatusOK, generateRes)
+}

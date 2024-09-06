@@ -113,6 +113,8 @@ func RegisterRoutes(e *echo.Echo, ctrl *controller.Controller) {
 	mrn.POST("/provider-jack/disbursement", ctrl.JackDisbursementCallbackCtrl)
 	mrn.POST("/create-report", ctrl.AuthMiddleware(ctrl.CreateMerchantReportCtrl))
 	mrn.POST("/invite-merchant-user", ctrl.AuthMiddleware(ctrl.InviteMerchantUserCtrl))
+	mrn.POST("/display-merchant-key", ctrl.AuthMiddleware(ctrl.DisplayMerchantKeyCtrl))
+	mrn.POST("/generate-merchant-key", ctrl.AuthMiddleware(ctrl.GenerateMerchantKeyCtrl))
 
 	// patch method
 	mrn.PATCH("/update-pin-password", ctrl.AuthMiddleware(ctrl.UpdatePinPasswordCtrl))

@@ -2580,6 +2580,89 @@ func (mr *Merchant) GetInformationMerchantSvc(username string) (dto.ResponseDto,
 	return resp, nil
 }
 
+func (mr *Merchant) DisplayMerchantKeySvc(username string, pin string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+
+	user, err := mr.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		slog.Errorw("failed get data user", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	// check input pin
+	if !comparePasswords(user.Pin, []byte(pin)) {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "wrong pin",
+		}
+
+		return resp, errors.New("wrong pin")
+	}
+
+	secretKey, err := mr.merchantRepoReads.GetSecretKeyByMerchantIdRepo(*user.MerchantID)
+	if err != nil {
+		slog.Errorw("failed get merchant key", "stack_trace", err.Error())
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: constant.GeneralErrMsg,
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Success retrieve secret key",
+		Data:            secretKey,
+	}
+
+	return resp, nil
+}
+
+func (mr *Merchant) GenerateMerchantKeySvc(pin string, username string) (dto.ResponseDto, error) {
+	var resp dto.ResponseDto
+	randomStrMerchantScret := helper.GenerateRandomString(30)
+	merchantSecret := "secret_key-" + randomStrMerchantScret
+
+	user, err := mr.userRepoReads.GetUserByUsername(username)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadGateway,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	// check input pin
+	if !comparePasswords(user.Pin, []byte(pin)) {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "wrong pin",
+		}
+
+		return resp, errors.New("wrong pin")
+	}
+
+	err = mr.merchantRepoWrites.UpdateMerchantSecretKeyRepo(merchantSecret, *user.MerchantID)
+	if err != nil {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusUnprocessableEntity,
+			ResponseMessage: err.Error(),
+		}
+		return resp, err
+	}
+
+	resp = dto.ResponseDto{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "success generated new secret key",
+	}
+
+	return resp, nil
+}
+
 func supportMerchantAnalyticsSvc(payload []entity.PaymentDetailMerchantProvider) dto.AnalyticsMerchantRespDto {
 	var totalVolumeSuccessIn float64
 	var totalSuccessTransactionIn int

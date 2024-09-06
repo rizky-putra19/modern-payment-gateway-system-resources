@@ -73,6 +73,8 @@ type MerchantServiceItf interface {
 	GetListCallbackMerchantSvc(params dto.QueryParamsMerchantCallback) (dto.ResponseDto, error)
 	GetMerchantAccountBalanceSvc(username string) (dto.ResponseDto, error)
 	GetInformationMerchantSvc(username string) (dto.ResponseDto, error)
+	DisplayMerchantKeySvc(username string, pin string) (dto.ResponseDto, error)
+	GenerateMerchantKeySvc(pin string, username string) (dto.ResponseDto, error)
 }
 
 type UserServiceItf interface {
