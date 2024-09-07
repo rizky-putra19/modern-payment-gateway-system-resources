@@ -130,6 +130,15 @@ func (tr *Transaction) GetPaymentDetailConfirmData(paymentId string) (dto.Respon
 
 func (tr *Transaction) GetTransactionList(params dto.QueryParams) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
+
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
+	}
+
 	// get transaction list to repository
 	transactionList, pagination, err := tr.transactionRepoReads.GetTransactionList(params)
 	if err != nil {
@@ -170,6 +179,14 @@ func (tr *Transaction) GetTransactionInListSvc(params dto.QueryParams) (dto.Resp
 		return resp, err
 	}
 
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
+	}
+
 	params.MerchantId = *users.MerchantID
 	transactionInList, pagination, err := tr.transactionRepoReads.GetTransactionInListRepo(params)
 	if err != nil {
@@ -208,6 +225,14 @@ func (tr *Transaction) GetTransactionOutListSvc(params dto.QueryParams) (dto.Res
 			ResponseMessage: err.Error(),
 		}
 		return resp, err
+	}
+
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
 	}
 
 	params.MerchantId = *users.MerchantID
@@ -1311,6 +1336,14 @@ func (tr *Transaction) CreateMerchantExportSvc(payload dto.CreateMerchantExportR
 func (tr *Transaction) GetListMerchantExportSvc(params dto.GetListMerchantExportFilter) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
+	}
+
 	listMerchantExport, err := tr.transactionRepoReads.GetListMerchantExportRepo(params)
 	if err != nil {
 		resp = dto.ResponseDto{
@@ -1332,6 +1365,14 @@ func (tr *Transaction) GetListMerchantExportSvc(params dto.GetListMerchantExport
 func (tr *Transaction) GetListInternalExportSvc(params dto.GetListMerchantExportFilter) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 	var listInternalExport []dto.InternalExportDto
+
+	if params.MinDate == "" {
+		params.MinDate = helper.GenerateTime(0)
+	}
+
+	if params.MaxDate == "" {
+		params.MaxDate = helper.GenerateTime(24)
+	}
 
 	params.Merchants = constant.InternalExport
 	listMerchantExport, err := tr.transactionRepoReads.GetListMerchantExportRepo(params)
