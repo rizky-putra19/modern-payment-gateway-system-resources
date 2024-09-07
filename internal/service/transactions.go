@@ -2128,7 +2128,7 @@ func (tr *Transaction) JackDisbursementCallbackHandlingSvc(payload dto.CreateDis
 			ReasonId:          constant.ReasonIdFee,
 			Status:            strings.ToUpper(constant.StatusSuccess),
 			CreateBy:          constant.CreateBySystem,
-			Amount:            helper.FormatFloat64(float64(amountInt)),
+			Amount:            detailTransaction.MerchantFee,
 			CapitalType:       constant.CapitalTypeDebit,
 		}
 		_, err = tr.merchantRepoWrites.CreateMerchantCapitalFlow(payloadMerchantCapitalFlowFee)
