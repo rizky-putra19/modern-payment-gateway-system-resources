@@ -2095,6 +2095,20 @@ func (tr *Transaction) JackDisbursementCallbackHandlingSvc(payload dto.CreateDis
 			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
 			return "", err
 		}
+
+		// update transaction status log
+		_, err = tr.transactionRepoWrites.CreateTransactionStatusLog(payload.ReferenceID, constant.StatusLogSuccess, constant.CreateBySystem, "", "")
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
+
+		// create provider confirmation detail
+		_, err = tr.providerRepoWrites.CreateProviderConfirmationDetail(constant.SourceCallback, payload.ReferenceID, constant.StatusSuccess)
+		if err != nil {
+			slog.Infof("JackDisbursementHandlingSvc %v got err: %v", payload.ReferenceID, err.Error())
+			return "", err
+		}
 	}
 
 	return "ok", nil
