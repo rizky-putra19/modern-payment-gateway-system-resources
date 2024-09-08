@@ -653,7 +653,7 @@ func (mr *MerchantReads) GetListRoutedPaychannelByIdMerchantPaychannelRepo(id in
 	`
 
 	err := mr.db.Select(&routedPaychannelList, query, id)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return routedPaychannelList, err
 	}
 

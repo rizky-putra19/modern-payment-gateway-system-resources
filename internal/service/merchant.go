@@ -85,14 +85,6 @@ func (mr *Merchant) GetCallbackAttemptsByPaymentId(paymentId string) (dto.Respon
 func (mr *Merchant) GetListMerchantCallback(params dto.QueryParamsMerchantCallback) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
-
 	listCallback, pagination, err := mr.merchantRepoReads.GetListMerchantCallbackWithFilter(params)
 	if err != nil {
 		resp = dto.ResponseDto{
@@ -151,14 +143,6 @@ func (mr *Merchant) GetListCallbackMerchantSvc(params dto.QueryParamsMerchantCal
 			ResponseMessage: err.Error(),
 		}
 		return resp, err
-	}
-
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
 	}
 
 	params.MerchantName = fmt.Sprintf("[%v]", *user.MerchantName)
@@ -246,14 +230,6 @@ func (mr *Merchant) GetLatestMerchantCallback(paymentId string) (dto.ResponseDto
 
 func (mr *Merchant) GetListManualPaymentWithFilter(params dto.QueryParamsManualPayment) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
-
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
 
 	listManualPayment, pagination, err := mr.merchantRepoReads.GetListManualPayment(params)
 	if err != nil {
@@ -1052,14 +1028,6 @@ func (mr *Merchant) GetDetailManualPaymentSvc(paymentId string) (dto.ResponseDto
 func (mr *Merchant) GetListOtherTransactionsSvc(params dto.QueryParamsManualPayment) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
-
 	user, err := mr.userRepoReads.GetUserByUsername(params.Username)
 	if err != nil {
 		resp = dto.ResponseDto{
@@ -1831,14 +1799,6 @@ func (mr *Merchant) GetMerchantPaychannelSvc(merchantId string) (dto.ResponseDto
 
 func (mr *Merchant) GetListCapitalFlowTransactionSvc(params dto.QueryParams) (dto.ResponseDto, error) {
 	var res dto.ResponseDto
-
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
 
 	listTransactionCapital, pagination, err := mr.transactionRepoReads.GetTransactionCapitalFlowRepo(params)
 	if err != nil {

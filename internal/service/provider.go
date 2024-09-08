@@ -165,6 +165,14 @@ func (pr *Provider) GetListProviderChannelAllSvc(params dto.QueryParams) (dto.Re
 func (pr *Provider) GetProviderChannelAnalyticsSvc(payload dto.GetProviderAnalyticsDtoReq) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 
+	if payload.MinDate == "" {
+		payload.MinDate = helper.GenerateTime(0)
+	}
+
+	if payload.MaxDate == "" {
+		payload.MaxDate = helper.GenerateTime(24)
+	}
+
 	transactionData, err := pr.transactionRepoReads.GetTransactionDataByProviderChannelRepo(payload)
 	if err != nil {
 		resp = dto.ResponseDto{

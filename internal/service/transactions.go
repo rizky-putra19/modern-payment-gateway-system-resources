@@ -131,14 +131,6 @@ func (tr *Transaction) GetPaymentDetailConfirmData(paymentId string) (dto.Respon
 func (tr *Transaction) GetTransactionList(params dto.QueryParams) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
 
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
-
 	// get transaction list to repository
 	transactionList, pagination, err := tr.transactionRepoReads.GetTransactionList(params)
 	if err != nil {
@@ -179,14 +171,6 @@ func (tr *Transaction) GetTransactionInListSvc(params dto.QueryParams) (dto.Resp
 		return resp, err
 	}
 
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
-
 	params.MerchantId = *users.MerchantID
 	transactionInList, pagination, err := tr.transactionRepoReads.GetTransactionInListRepo(params)
 	if err != nil {
@@ -225,14 +209,6 @@ func (tr *Transaction) GetTransactionOutListSvc(params dto.QueryParams) (dto.Res
 			ResponseMessage: err.Error(),
 		}
 		return resp, err
-	}
-
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
 	}
 
 	params.MerchantId = *users.MerchantID
@@ -2167,6 +2143,14 @@ func (tr *Transaction) GetReportListMerchantSvc(req dto.GetListMerchantExportFil
 		return resp, err
 	}
 
+	if req.MinDate == "" {
+		req.MinDate = helper.GenerateTime(0)
+	}
+
+	if req.MaxDate == "" {
+		req.MaxDate = helper.GenerateTime(24)
+	}
+
 	listMerchantExport, err := tr.transactionRepoReads.GetListMerchantReportRepo(req, *user.MerchantID)
 	if err != nil {
 		resp = dto.ResponseDto{
@@ -2266,14 +2250,6 @@ func (tr *Transaction) CreateReportMerchantSvc(req dto.CreateReportMerchantReqDt
 
 func (tr *Transaction) GetListTransactionMerchantFlowSvc(params dto.QueryParams) (dto.ResponseDto, error) {
 	var resp dto.ResponseDto
-
-	if params.MinDate == "" {
-		params.MinDate = helper.GenerateTime(0)
-	}
-
-	if params.MaxDate == "" {
-		params.MaxDate = helper.GenerateTime(24)
-	}
 
 	user, err := tr.userRepoReads.GetUserByUsername(params.Username)
 	if err != nil {
