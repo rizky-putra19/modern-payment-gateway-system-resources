@@ -1660,14 +1660,6 @@ func (tr *Transaction) MerchantDisbursementSvc(payload dto.MerchantDisbursement)
 		return resp, err
 	}
 
-	if float64(payload.Amount) > accountBalance.SettledBalance {
-		resp = dto.ResponseDto{
-			ResponseCode:    http.StatusBadRequest,
-			ResponseMessage: "not enough balance for disbursement",
-		}
-		return resp, errors.New("insufficient")
-	}
-
 	listMerchantPaychannel, err := tr.merchantRepoReads.GetMerchantPaychannelByMerchantId(*user.MerchantID)
 	if err != nil {
 		slog.Infof("username: %v, failed get merchant channel, err: %v", payload.Username, err.Error())
@@ -1696,6 +1688,15 @@ func (tr *Transaction) MerchantDisbursementSvc(payload dto.MerchantDisbursement)
 		resp = dto.ResponseDto{
 			ResponseCode:    http.StatusBadRequest,
 			ResponseMessage: "this merchant not routed for disbursement",
+		}
+		return resp, errors.New("insufficient")
+	}
+
+	amountPlusFee := float64(payload.Amount) + disburseMerchantChannel.Fee
+	if amountPlusFee > accountBalance.SettledBalance {
+		resp = dto.ResponseDto{
+			ResponseCode:    http.StatusBadRequest,
+			ResponseMessage: "not enough balance for disbursement",
 		}
 		return resp, errors.New("insufficient")
 	}
