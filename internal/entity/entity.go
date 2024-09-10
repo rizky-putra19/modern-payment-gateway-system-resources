@@ -90,7 +90,6 @@ type PaymentDetailMerchantProvider struct {
 	MerchantUpdatedAt      time.Time `db:"merchant_updated_at"`
 	ProviderName           string    `db:"provider_name"`
 	ProviderPaychannelID   int       `db:"provider_payment_method_id"`
-	ProviderBankCode       int       `db:"provider_bank_code"`
 	PaychannelName         string    `db:"paychannel_name"`
 	ProviderFee            float64   `db:"provider_fee"`
 	ProviderFeeType        string    `db:"provider_fee_type"`
