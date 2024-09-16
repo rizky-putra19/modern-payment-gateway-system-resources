@@ -451,7 +451,6 @@ func (tr *TransactionsReads) GetTransactionDataForProviderAnalyticsRepo(payload 
 		mp.updated_at AS merchant_updated_at,
 		p.provider_name,
 		pp.provider_payment_method_id,
-		pp.bank_code AS provider_bank_code,
 		pp.paychannel_name,
 		pp.fee AS provider_fee,
 		pp.fee_type AS provider_fee_type,
