@@ -1,6 +1,6 @@
 Modern Payment Gateway System 💳
 
-Hypay is a scalable and secure payment gateway platform designed to simplify online transactions for businesses and developers. Built with Golang for high-performance backend services and Cloud SQL (PostgreSQL) for reliable data management, Hypay supports seamless API integration for merchants, partners, and financial institutions.
+Scalable and secure payment gateway platform designed to simplify online transactions for businesses and developers. Built with Golang for high-performance backend services and Cloud SQL (PostgreSQL) for reliable data management, Hypay supports seamless API integration for merchants, partners, and financial institutions.
 
 🚀 Key Features
 
